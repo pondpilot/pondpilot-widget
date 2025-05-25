@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PondPilot Widget - Basic Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        pre {
+            background: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Basic PondPilot Widget Example</h1>
+    <p>This is the simplest way to use the PondPilot widget. Just add the class <code>pondpilot-snippet</code> to any <code>&lt;pre&gt;</code> tag:</p>
+
+    <pre class="pondpilot-snippet">
+SELECT 
+    'Hello from PondPilot!' as message,
+    CURRENT_DATE as today,
+    CURRENT_TIME as now;</pre>
+
+    <h2>Another Example</h2>
+    <p>You can have multiple widgets on the same page:</p>
+
+    <pre class="pondpilot-snippet">
+-- Generate a sequence of numbers
+SELECT * FROM generate_series(1, 10) AS t(num)
+WHERE num % 2 = 0;</pre>
+
+    <!-- Load the widget from CDN -->
+    <script src="https://cdn.jsdelivr.net/gh/pondpilot/pondpilot-widget@latest/dist/pondpilot-widget.min.js"></script>
+    
+    <!-- Or load locally during development -->
+    <!-- <script src="../dist/pondpilot-widget.js"></script> -->
+</body>
+</html>

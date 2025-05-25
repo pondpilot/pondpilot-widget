@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PondPilot Widget Example</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        line-height: 1.6;
+        color: #333;
+      }
+
+      h1,
+      h2,
+      h3 {
+        color: #111;
+      }
+
+      /* Static code blocks that will be transformed */
+      pre {
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        padding: 16px;
+        overflow-x: auto;
+      }
+
+      code {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 14px;
+      }
+
+      .example-section {
+        margin: 40px 0;
+        padding: 20px 0;
+        border-bottom: 1px solid #e1e4e8;
+      }
+
+      .example-section:last-child {
+        border-bottom: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PondPilot Widget Examples</h1>
+    <p>
+      This page demonstrates how to use the PondPilot widget to transform static SQL code blocks
+    </p>
+
+    <div class="example-section">
+      <h2>1. Basic SELECT Query</h2>
+      <p>Add the class <code>pondpilot-snippet</code> to any <code>&lt;pre&gt;</code> tag:</p>
+
+      <pre class="pondpilot-snippet">
+SELECT
+    'Hello World' as greeting,
+    42 as answer,
+    CURRENT_DATE as today;</pre
+      >
+    </div>
+
+    <div class="example-section">
+      <h2>2. Working with Tables</h2>
+      <p>Create and query tables using DuckDB's in-memory database:</p>
+
+      <pre class="pondpilot-snippet">
+-- Create a sample table
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100),
+    created_at DATE
+);
+
+-- Insert some data
+INSERT INTO users VALUES
+    (1, 'Alice Johnson', 'alice@example.com', '2024-01-15'),
+    (2, 'Bob Smith', 'bob@example.com', '2024-02-20'),
+    (3, 'Charlie Brown', 'charlie@example.com', '2024-03-10');
+
+-- Query the data
+SELECT * FROM users ORDER BY created_at DESC;</pre
+      >
+    </div>
+
+    <div class="example-section">
+      <h2>3. Aggregations and Analytics</h2>
+      <p>Use DuckDB's powerful analytics features:</p>
+
+      <pre class="pondpilot-snippet">
+WITH sales_data AS (
+    SELECT * FROM (VALUES
+        ('2024-01', 'Electronics', 15000),
+        ('2024-01', 'Clothing', 8000),
+        ('2024-01', 'Books', 3000),
+        ('2024-02', 'Electronics', 18000),
+        ('2024-02', 'Clothing', 9500),
+        ('2024-02', 'Books', 3500),
+        ('2024-03', 'Electronics', 22000),
+        ('2024-03', 'Clothing', 11000),
+        ('2024-03', 'Books', 4200)
+    ) AS t(month, category, revenue)
+)
+SELECT
+    category,
+    SUM(revenue) as total_revenue,
+    AVG(revenue) as avg_monthly_revenue,
+    MAX(revenue) as best_month
+FROM sales_data
+GROUP BY category
+ORDER BY total_revenue DESC;</pre
+      >
+    </div>
+
+    <div class="example-section">
+      <h2>4. Working with JSON</h2>
+      <p>DuckDB has excellent JSON support:</p>
+
+      <pre class="pondpilot-snippet">
+SELECT * FROM (
+    SELECT
+        '{"name": "Product A", "price": 29.99, "tags": ["electronics", "popular"]}' as product
+    UNION ALL
+    SELECT '{"name": "Product B", "price": 49.99, "tags": ["home", "new"]}'
+    UNION ALL
+    SELECT '{"name": "Product C", "price": 19.99, "tags": ["electronics", "budget"]}'
+) AS products,
+LATERAL (
+    SELECT
+        json_extract_string(product, '$.name') as name,
+        json_extract(product, '$.price') as price,
+        json_extract(product, '$.tags') as tags
+);</pre
+      >
+    </div>
+
+    <div class="example-section">
+      <h2>5. Generate Series and Date Functions</h2>
+      <p>Use DuckDB's built-in functions:</p>
+
+      <pre class="pondpilot-snippet">
+SELECT
+    generate_series::DATE as date,
+    DAYNAME(generate_series::DATE) as day_name,
+    CASE
+        WHEN DAYNAME(generate_series::DATE) IN ('Saturday', 'Sunday')
+        THEN 'Weekend'
+        ELSE 'Weekday'
+    END as day_type
+FROM generate_series(
+    CURRENT_DATE - INTERVAL '7 days',
+    CURRENT_DATE,
+    INTERVAL '1 day'
+);</pre
+      >
+    </div>
+
+    <div class="example-section">
+      <h2>How to Use</h2>
+      <h3>Method 1: Script Tag</h3>
+      <pre><code>&lt;!-- Add this before closing &lt;/body&gt; tag --&gt;
+&lt;script src="https://cdn.jsdelivr.net/gh/yourusername/pondpilot/widget/pondpilot-widget.js"&gt;&lt;/script&gt;</code></pre>
+
+      <h3>Method 2: NPM Package</h3>
+      <pre><code>npm install pondpilot-widget
+
+// In your JavaScript
+import PondPilot from 'pondpilot-widget';
+PondPilot.init();</code></pre>
+
+      <h3>Configuration</h3>
+      <pre><code>&lt;script&gt;
+window.PONDPILOT_BASE_URL = 'https://your-pondpilot-instance.com';
+
+// Or programmatically
+PondPilot.config.theme = 'dark';
+PondPilot.config.editable = false;
+PondPilot.init();
+&lt;/script&gt;</code></pre>
+    </div>
+
+    <!-- Load the widget -->
+    <script src="../src/pondpilot-widget.js"></script>
+  </body>
+</html>

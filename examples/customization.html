@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PondPilot Widget - Customization Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        
+        .dark-section {
+            background: #1a1b26;
+            color: #e1e4e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        pre {
+            background: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        
+        code {
+            background: #f3f4f6;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PondPilot Widget Customization</h1>
+    
+    <h2>1. Read-only Widget</h2>
+    <p>This widget is read-only - users can run it but not edit the SQL:</p>
+    <pre class="pondpilot-snippet-readonly">
+SELECT 
+    'This query cannot be edited' as message,
+    'But you can still run it!' as note;</pre>
+
+    <h2>2. Dark Theme</h2>
+    <div class="dark-section">
+        <p>This widget uses the dark theme:</p>
+        <pre class="pondpilot-snippet-dark">
+SELECT 
+    'Dark theme looks great!' as message,
+    '🌙' as emoji;</pre>
+    </div>
+
+    <h2>3. No Branding</h2>
+    <p>This widget hides the PondPilot branding:</p>
+    <pre class="pondpilot-snippet-no-branding">
+SELECT 'Clean and minimal' as style;</pre>
+
+    <h2>4. Custom Configuration</h2>
+    <p>You can also configure widgets programmatically:</p>
+    <pre id="custom-widget">
+WITH data AS (
+    SELECT 'Programmatically configured' as type
+)
+SELECT * FROM data;</pre>
+
+    <script>
+        // Configure base URL for all widgets
+        window.PONDPILOT_BASE_URL = 'https://app.pondpilot.com';
+    </script>
+    
+    <!-- Load the widget -->
+    <script src="../src/pondpilot-widget.js"></script>
+    
+    <script>
+        // Custom initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            // Read-only widgets
+            document.querySelectorAll('.pondpilot-snippet-readonly').forEach(el => {
+                new PondPilot.Widget(el, { editable: false });
+            });
+            
+            // Dark theme widgets
+            document.querySelectorAll('.pondpilot-snippet-dark').forEach(el => {
+                new PondPilot.Widget(el, { theme: 'dark' });
+            });
+            
+            // No branding widgets
+            document.querySelectorAll('.pondpilot-snippet-no-branding').forEach(el => {
+                new PondPilot.Widget(el, { showPoweredBy: false });
+            });
+            
+            // Programmatic widget
+            new PondPilot.Widget(document.getElementById('custom-widget'), {
+                theme: 'light',
+                editable: true,
+                showPoweredBy: true
+            });
+        });
+    </script>
+</body>
+</html>
