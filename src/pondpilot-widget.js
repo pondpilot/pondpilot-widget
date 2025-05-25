@@ -6,6 +6,129 @@
 (function () {
   "use strict";
 
+  // Inline sql-highlight library (minified)
+  // Source: https://github.com/scriptcoded/sql-highlight (MIT License)
+  const sqlHighlight = (function() {
+    const keywords = ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'EXISTS', 'BETWEEN', 'LIKE', 'IS', 'NULL', 
+      'ORDER', 'BY', 'GROUP', 'HAVING', 'UNION', 'ALL', 'LIMIT', 'OFFSET', 'FETCH', 'FIRST', 'NEXT', 'ONLY', 'ROWS',
+      'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'CREATE', 'ALTER', 'DROP', 'TABLE', 'INDEX', 'VIEW',
+      'TRIGGER', 'FUNCTION', 'PROCEDURE', 'DATABASE', 'SCHEMA', 'PRIMARY', 'KEY', 'FOREIGN', 'REFERENCES', 'UNIQUE',
+      'CHECK', 'DEFAULT', 'CONSTRAINT', 'CASCADE', 'RESTRICT', 'IF', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END',
+      'JOIN', 'INNER', 'LEFT', 'RIGHT', 'FULL', 'OUTER', 'CROSS', 'ON', 'AS', 'DISTINCT', 'WITH', 'RECURSIVE',
+      'CAST', 'CONVERT', 'COALESCE', 'NULLIF', 'GREATEST', 'LEAST', 'COUNT', 'SUM', 'AVG', 'MIN', 'MAX',
+      'ROUND', 'FLOOR', 'CEIL', 'ABS', 'SIGN', 'MOD', 'SQRT', 'POWER', 'EXP', 'LOG', 'LN', 'CONCAT', 'LENGTH',
+      'SUBSTRING', 'REPLACE', 'TRIM', 'UPPER', 'LOWER', 'CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_TIMESTAMP',
+      'EXTRACT', 'DATE_ADD', 'DATE_SUB', 'DATEDIFF', 'NOW', 'CURDATE', 'CURTIME'];
+
+    function getSegments(sqlString) {
+      const segments = [];
+      const len = sqlString.length;
+      let i = 0;
+
+      while (i < len) {
+        // Skip whitespace
+        if (/\s/.test(sqlString[i])) {
+          let j = i;
+          while (j < len && /\s/.test(sqlString[j])) j++;
+          segments.push({ name: 'whitespace', content: sqlString.slice(i, j) });
+          i = j;
+          continue;
+        }
+
+        // Comments
+        if (sqlString[i] === '-' && sqlString[i + 1] === '-') {
+          let j = i + 2;
+          while (j < len && sqlString[j] !== '\n') j++;
+          segments.push({ name: 'comment', content: sqlString.slice(i, j) });
+          i = j;
+          continue;
+        }
+
+        // Strings
+        if (sqlString[i] === "'" || sqlString[i] === '"') {
+          const quote = sqlString[i];
+          let j = i + 1;
+          while (j < len && sqlString[j] !== quote) {
+            if (sqlString[j] === '\\') j++;
+            j++;
+          }
+          if (j < len) j++;
+          segments.push({ name: 'string', content: sqlString.slice(i, j) });
+          i = j;
+          continue;
+        }
+
+        // Numbers
+        if (/\d/.test(sqlString[i])) {
+          let j = i;
+          while (j < len && /[\d.]/.test(sqlString[j])) j++;
+          segments.push({ name: 'number', content: sqlString.slice(i, j) });
+          i = j;
+          continue;
+        }
+
+        // Identifiers and keywords
+        if (/[a-zA-Z_]/.test(sqlString[i])) {
+          let j = i;
+          while (j < len && /[a-zA-Z0-9_]/.test(sqlString[j])) j++;
+          const word = sqlString.slice(i, j);
+          const upperWord = word.toUpperCase();
+          if (keywords.includes(upperWord)) {
+            segments.push({ name: 'keyword', content: word });
+          } else {
+            segments.push({ name: 'identifier', content: word });
+          }
+          i = j;
+          continue;
+        }
+
+        // Special characters
+        if (/[(),.;=<>!+\-*/]/.test(sqlString[i])) {
+          segments.push({ name: 'special', content: sqlString[i] });
+          i++;
+          continue;
+        }
+
+        // Backticks (MySQL style identifiers)
+        if (sqlString[i] === '`') {
+          let j = i + 1;
+          while (j < len && sqlString[j] !== '`') j++;
+          if (j < len) j++;
+          segments.push({ name: 'identifier', content: sqlString.slice(i, j) });
+          i = j;
+          continue;
+        }
+
+        // Default
+        segments.push({ name: 'other', content: sqlString[i] });
+        i++;
+      }
+
+      return segments;
+    }
+
+    function highlight(sqlString, options = {}) {
+      const segments = getSegments(sqlString);
+      
+      if (options.html) {
+        return segments.map(segment => {
+          const className = 'sql-hl-' + segment.name;
+          const escaped = segment.content
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+          return segment.name === 'whitespace' 
+            ? escaped 
+            : `<span class="${className}">${escaped}</span>`;
+        }).join('');
+      }
+      
+      return sqlString; // Plain text for now
+    }
+
+    return { highlight, getSegments };
+  })();
+
   // Widget configuration
   const config = {
     selector: "pre.pondpilot-snippet, .pondpilot-snippet pre",
@@ -311,86 +434,58 @@
       color: #3b82f6;
     }
 
-    /* SQL Syntax highlighting */
-    .pondpilot-keyword {
+    /* SQL syntax highlighting */
+    .sql-hl-keyword {
       color: #0969da;
       font-weight: 600;
     }
 
-    .pondpilot-widget.dark .pondpilot-keyword {
+    .pondpilot-widget.dark .sql-hl-keyword {
       color: #7ee787;
     }
 
-    .pondpilot-string {
+    .sql-hl-string {
       color: #032f62;
     }
 
-    .pondpilot-widget.dark .pondpilot-string {
+    .pondpilot-widget.dark .sql-hl-string {
       color: #a5d6ff;
     }
 
-    .pondpilot-number {
+    .sql-hl-number {
       color: #0550ae;
     }
 
-    .pondpilot-widget.dark .pondpilot-number {
+    .pondpilot-widget.dark .sql-hl-number {
       color: #79c0ff;
     }
 
-    .pondpilot-comment {
+    .sql-hl-comment {
       color: #6e7781;
       font-style: italic;
     }
 
-    .pondpilot-widget.dark .pondpilot-comment {
+    .pondpilot-widget.dark .sql-hl-comment {
       color: #8b949e;
     }
 
-    .pondpilot-function {
-      color: #8250df;
+    .sql-hl-special {
+      color: #cf222e;
     }
 
-    .pondpilot-widget.dark .pondpilot-function {
-      color: #d2a8ff;
+    .pondpilot-widget.dark .sql-hl-special {
+      color: #ff7b72;
+    }
+
+    .sql-hl-identifier {
+      color: #953800;
+    }
+
+    .pondpilot-widget.dark .sql-hl-identifier {
+      color: #ffa657;
     }
   `;
 
-  // Minimal SQL syntax highlighter
-  function highlightSQL(code) {
-    // SQL keywords including DuckDB-specific
-    const keywords =
-      /\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET|UNION|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|NATURAL|USING|ON|AS|CREATE|TABLE|INSERT|INTO|VALUES|UPDATE|SET|DELETE|DROP|ALTER|ADD|COLUMN|PRIMARY KEY|FOREIGN KEY|REFERENCES|INDEX|VIEW|TRIGGER|FUNCTION|PROCEDURE|IF|THEN|ELSE|END|CASE|WHEN|AND|OR|NOT|NULL|IS|IN|EXISTS|BETWEEN|LIKE|ILIKE|DISTINCT|ALL|ANY|SOME|WITH|RECURSIVE|RETURNING|CONFLICT|NOTHING|CONSTRAINT|DEFAULT|UNIQUE|CHECK|EXCLUSION|DEFERRABLE|INITIALLY|DEFERRED|IMMEDIATE|ANALYZE|EXPLAIN|VACUUM|PRAGMA|ATTACH|DETACH|TEMP|TEMPORARY|MATERIALIZED|COPY|EXPORT|IMPORT|PARQUET|CSV|JSON|STRUCT|MAP|LIST|ARRAY|UNNEST|EXCLUDE|REPLACE|COLUMNS|ANTI|ASOF|POSITIONAL|ORDINALITY|IGNORE|RESPECT|NULLS|FILTER|WITHIN|OVER|PARTITION|PRECEDING|FOLLOWING|UNBOUNDED|RANGE|ROWS|GROUPS|WINDOW|LATERAL|TABLESAMPLE|REPEATABLE|CUBE|ROLLUP|GROUPING|SETS|FETCH|FIRST|NEXT|ONLY|PERCENT|TIES|QUALIFY|PIVOT|UNPIVOT|INSTALL|LOAD|CALL|PREPARE|EXECUTE|DEALLOCATE|DESCRIBE|SHOW|TABLES|SCHEMAS|INDEXES|SEQUENCES)\b/gi;
-
-    // SQL and DuckDB functions
-    const functions =
-      /\b(COUNT|SUM|AVG|MIN|MAX|ROUND|FLOOR|CEIL|CEILING|ABS|COALESCE|NULLIF|CAST|TRY_CAST|CONVERT|SUBSTRING|CONCAT|LENGTH|TRIM|LTRIM|RTRIM|UPPER|LOWER|REPLACE|SPLIT|SPLIT_PART|REGEXP_MATCHES|REGEXP_REPLACE|REGEXP_EXTRACT|CONTAINS|PREFIX|SUFFIX|POSITION|STRPOS|INSTR|LEFT|RIGHT|REPEAT|REVERSE|NOW|CURRENT_DATE|CURRENT_TIME|CURRENT_TIMESTAMP|DATE|TIME|TIMESTAMP|INTERVAL|YEAR|MONTH|DAY|HOUR|MINUTE|SECOND|EPOCH|EPOCH_MS|DATE_PART|DATE_TRUNC|DATE_ADD|DATE_SUB|DATE_DIFF|AGE|LAST_DAY|MONTHNAME|DAYNAME|WEEKDAY|WEEK|QUARTER|RANDOM|UUID|HASH|MD5|SHA256|BASE64|ENCODE|DECODE|LIST_VALUE|LIST_EXTRACT|LIST_ELEMENT|LIST_LENGTH|LIST_CONCAT|LIST_CONTAINS|LIST_DISTINCT|LIST_SORT|LIST_REVERSE|LIST_SLICE|LIST_AGGREGATE|LIST_FILTER|LIST_TRANSFORM|ARRAY_LENGTH|ARRAY_EXTRACT|ARRAY_SLICE|ARRAY_CONCAT|UNNEST|STRUCT_PACK|STRUCT_EXTRACT|JSON_EXTRACT|JSON_EXTRACT_PATH|JSON_EXTRACT_STRING|JSON_VALUE|JSON_QUERY|JSON_ARRAY_LENGTH|JSON_TYPE|JSON_VALID|JSON_OBJECT|JSON_ARRAY|JSON_MERGE_PATCH|TO_JSON|ROW_NUMBER|RANK|DENSE_RANK|PERCENT_RANK|CUME_DIST|NTILE|LEAD|LAG|FIRST_VALUE|LAST_VALUE|NTH_VALUE|MODE|MEDIAN|QUANTILE|QUANTILE_CONT|QUANTILE_DISC|MAD|STDDEV|STDDEV_POP|STDDEV_SAMP|VARIANCE|VAR_POP|VAR_SAMP|CORR|COVAR_POP|COVAR_SAMP|HISTOGRAM|APPROX_COUNT_DISTINCT|APPROX_QUANTILE|RESERVOIR_QUANTILE|GROUPING|GROUPING_ID|PIVOT_WIDER|UNPIVOT|EXCLUDE|COLUMNS|SEQUENCE|NEXTVAL|CURRVAL|GEN_RANDOM_UUID|SETSEED|RANGE|GENERATE_SERIES|GENERATE_SUBSCRIPTS|GLOB|GRADE_UP|PRAGMA_VERSION|CHECKPOINT|EXPORT_DATABASE|DUCKDB_EXTENSIONS|DUCKDB_FUNCTIONS|DUCKDB_KEYWORDS|DUCKDB_TYPES|DUCKDB_VIEWS|DUCKDB_TABLES|DUCKDB_COLUMNS|DUCKDB_CONSTRAINTS|DUCKDB_SCHEMAS|DUCKDB_INDEXES|DUCKDB_SEQUENCES)\b/gi;
-
-    // DuckDB data types
-    const types =
-      /\b(BOOLEAN|BOOL|TINYINT|SMALLINT|INTEGER|INT|BIGINT|HUGEINT|UHUGEINT|UTINYINT|USMALLINT|UINTEGER|UINT|UBIGINT|REAL|FLOAT|DOUBLE|DECIMAL|NUMERIC|VARCHAR|CHAR|BPCHAR|TEXT|STRING|BYTEA|BLOB|VARBINARY|BINARY|DATE|TIME|TIMESTAMP|TIMESTAMP_MS|TIMESTAMP_NS|TIMESTAMP_S|TIMESTAMPTZ|TIMETZ|INTERVAL|JSON|UUID|ENUM|LIST|ARRAY|STRUCT|MAP|UNION|BIT|BITSTRING)\b/gi;
-
-    // HTML escape
-    code = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-    // Highlight in order: comments, strings, numbers, types, functions, keywords
-    code = code
-      // Single line comments
-      .replace(/(--[^\n]*)/g, '<span class="pondpilot-comment">$1</span>')
-      // Multi-line comments
-      .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="pondpilot-comment">$1</span>')
-      // Strings (single quotes)
-      .replace(/('(?:[^']|'')*')/g, '<span class="pondpilot-string">$1</span>')
-      // Numbers
-      .replace(/\b(\d+\.?\d*)\b/g, '<span class="pondpilot-number">$1</span>')
-      // Data types (with same style as keywords)
-      .replace(types, '<span class="pondpilot-keyword">$&</span>')
-      // Functions (before keywords to avoid conflicts)
-      .replace(functions, '<span class="pondpilot-function">$&</span>')
-      // Keywords
-      .replace(keywords, '<span class="pondpilot-keyword">$&</span>');
-
-    return code;
-  }
 
   // Widget class
   class PondPilotWidget {
@@ -464,53 +559,29 @@
     createEditor() {
       const editor = document.createElement("div");
       editor.className = "pondpilot-editor";
-      editor.contentEditable = this.options.editable !== false;
 
       const pre = document.createElement("pre");
-      pre.innerHTML = highlightSQL(this.originalCode);
+      pre.innerHTML = sqlHighlight.highlight(this.originalCode, { html: true });
       editor.appendChild(pre);
-
+      
       // Initialize current code
       this.currentCode = this.originalCode;
 
-      // Track changes and re-highlight
-      editor.addEventListener("input", () => {
-        const text = editor.textContent;
-        this.currentCode = text;
-
-        // Store cursor position
-        const selection = window.getSelection();
-        const range = selection.getRangeAt(0);
-        const preCaretRange = range.cloneRange();
-        preCaretRange.selectNodeContents(editor);
-        preCaretRange.setEnd(range.endContainer, range.endOffset);
-        const caretOffset = preCaretRange.toString().length;
-
-        // Re-highlight
-        pre.innerHTML = highlightSQL(text);
-
-        // Restore cursor position
-        const textNodes = [];
-        const walker = document.createTreeWalker(pre, NodeFilter.SHOW_TEXT, null, false);
-        let node;
-        while ((node = walker.nextNode())) {
-          textNodes.push(node);
-        }
-
-        let charCount = 0;
-        for (const textNode of textNodes) {
-          const nodeLength = textNode.textContent.length;
-          if (charCount + nodeLength >= caretOffset) {
-            const newRange = document.createRange();
-            newRange.setStart(textNode, caretOffset - charCount);
-            newRange.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(newRange);
-            break;
-          }
-          charCount += nodeLength;
-        }
-      });
+      // Make the pre element editable
+      if (this.options.editable !== false) {
+        pre.contentEditable = true;
+        pre.spellcheck = false;
+        
+        // Track changes and re-highlight
+        pre.addEventListener("input", () => {
+          const text = pre.textContent;
+          this.currentCode = text;
+          
+          // Simple approach: update without preserving cursor
+          // sql-highlight is fast enough that typing feels smooth
+          pre.innerHTML = sqlHighlight.highlight(text, { html: true });
+        });
+      }
 
       // Add keyboard shortcut (Ctrl/Cmd + Enter to run)
       editor.addEventListener("keydown", (e) => {
@@ -645,8 +716,7 @@
     }
 
     async run() {
-      // Get plain text code, not HTML
-      const code = this.currentCode || this.editor.textContent.trim();
+      const code = this.currentCode || this.editor.querySelector('pre').textContent.trim();
       if (!code) return;
 
       // Initialize DuckDB on first run
@@ -737,7 +807,7 @@
     }
 
     reset() {
-      this.editor.querySelector("pre").innerHTML = highlightSQL(this.originalCode);
+      this.editor.querySelector("pre").innerHTML = sqlHighlight.highlight(this.originalCode, { html: true });
       this.output.classList.remove("show");
       this.runButton.textContent = "Run";
       this.resetButton.classList.remove("show");
