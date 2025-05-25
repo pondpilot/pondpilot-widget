@@ -4,13 +4,13 @@
  */
 
 (function () {
-  'use strict';
+  "use strict";
 
   // Widget configuration
   const config = {
-    selector: 'pre.pondpilot-snippet, .pondpilot-snippet pre',
-    baseUrl: window.PONDPILOT_BASE_URL || 'http://localhost:5173',
-    theme: 'light',
+    selector: "pre.pondpilot-snippet, .pondpilot-snippet pre",
+    baseUrl: window.PONDPILOT_BASE_URL || "http://localhost:5173",
+    theme: "light",
     autoInit: true,
   };
 
@@ -59,6 +59,41 @@
     .pondpilot-run-button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+
+    /* Reset button in editor */
+    .pondpilot-reset-button {
+      position: absolute;
+      top: 8px;
+      right: 60px;
+      z-index: 10;
+      padding: 4px 8px;
+      background: rgba(107, 114, 128, 0.1);
+      color: #6b7280;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .pondpilot-widget:hover .pondpilot-reset-button.show,
+    .pondpilot-reset-button.show:hover {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .pondpilot-reset-button:hover {
+      background: rgba(107, 114, 128, 0.2);
+      color: #374151;
+    }
+
+    .pondpilot-widget.dark .pondpilot-reset-button:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e5e7eb;
     }
 
     /* Clean editor */
@@ -173,7 +208,40 @@
       font-size: 12px;
     }
 
-    /* Results footer with reset */
+    /* Loading progress */
+    .pondpilot-progress {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 24px;
+    }
+
+    .pondpilot-progress-bar {
+      width: 200px;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .pondpilot-widget.dark .pondpilot-progress-bar {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .pondpilot-progress-fill {
+      height: 100%;
+      background: #3b82f6;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .pondpilot-progress-text {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    /* Results footer */
     .pondpilot-results-footer {
       display: flex;
       align-items: center;
@@ -195,27 +263,6 @@
       gap: 6px;
     }
 
-    .pondpilot-reset-button {
-      font-size: 11px;
-      color: #6b7280;
-      background: none;
-      border: none;
-      padding: 2px 8px;
-      cursor: pointer;
-      border-radius: 3px;
-      transition: all 0.15s ease;
-    }
-
-    .pondpilot-reset-button:hover {
-      background: rgba(0, 0, 0, 0.05);
-      color: #374151;
-    }
-
-    .pondpilot-widget.dark .pondpilot-reset-button:hover {
-      background: rgba(255, 255, 255, 0.05);
-      color: #e5e7eb;
-    }
-
     /* Duck logo watermark */
     .pondpilot-duck {
       position: absolute;
@@ -225,11 +272,19 @@
       height: 16px;
       opacity: 0.1;
       transition: opacity 0.2s;
-      pointer-events: none;
+      cursor: pointer;
+      z-index: 5;
+      color: inherit;
+      display: block;
     }
 
     .pondpilot-widget:hover .pondpilot-duck {
       opacity: 0.2;
+    }
+
+    .pondpilot-duck:hover {
+      opacity: 0.3;
+      transform: scale(1.1);
     }
 
     /* Subtle branding */
@@ -255,7 +310,87 @@
     .pondpilot-powered a:hover {
       color: #3b82f6;
     }
+
+    /* SQL Syntax highlighting */
+    .pondpilot-keyword {
+      color: #0969da;
+      font-weight: 600;
+    }
+
+    .pondpilot-widget.dark .pondpilot-keyword {
+      color: #7ee787;
+    }
+
+    .pondpilot-string {
+      color: #032f62;
+    }
+
+    .pondpilot-widget.dark .pondpilot-string {
+      color: #a5d6ff;
+    }
+
+    .pondpilot-number {
+      color: #0550ae;
+    }
+
+    .pondpilot-widget.dark .pondpilot-number {
+      color: #79c0ff;
+    }
+
+    .pondpilot-comment {
+      color: #6e7781;
+      font-style: italic;
+    }
+
+    .pondpilot-widget.dark .pondpilot-comment {
+      color: #8b949e;
+    }
+
+    .pondpilot-function {
+      color: #8250df;
+    }
+
+    .pondpilot-widget.dark .pondpilot-function {
+      color: #d2a8ff;
+    }
   `;
+
+  // Minimal SQL syntax highlighter
+  function highlightSQL(code) {
+    // SQL keywords including DuckDB-specific
+    const keywords =
+      /\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET|UNION|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|NATURAL|USING|ON|AS|CREATE|TABLE|INSERT|INTO|VALUES|UPDATE|SET|DELETE|DROP|ALTER|ADD|COLUMN|PRIMARY KEY|FOREIGN KEY|REFERENCES|INDEX|VIEW|TRIGGER|FUNCTION|PROCEDURE|IF|THEN|ELSE|END|CASE|WHEN|AND|OR|NOT|NULL|IS|IN|EXISTS|BETWEEN|LIKE|ILIKE|DISTINCT|ALL|ANY|SOME|WITH|RECURSIVE|RETURNING|CONFLICT|NOTHING|CONSTRAINT|DEFAULT|UNIQUE|CHECK|EXCLUSION|DEFERRABLE|INITIALLY|DEFERRED|IMMEDIATE|ANALYZE|EXPLAIN|VACUUM|PRAGMA|ATTACH|DETACH|TEMP|TEMPORARY|MATERIALIZED|COPY|EXPORT|IMPORT|PARQUET|CSV|JSON|STRUCT|MAP|LIST|ARRAY|UNNEST|EXCLUDE|REPLACE|COLUMNS|ANTI|ASOF|POSITIONAL|ORDINALITY|IGNORE|RESPECT|NULLS|FILTER|WITHIN|OVER|PARTITION|PRECEDING|FOLLOWING|UNBOUNDED|RANGE|ROWS|GROUPS|WINDOW|LATERAL|TABLESAMPLE|REPEATABLE|CUBE|ROLLUP|GROUPING|SETS|FETCH|FIRST|NEXT|ONLY|PERCENT|TIES|QUALIFY|PIVOT|UNPIVOT|INSTALL|LOAD|CALL|PREPARE|EXECUTE|DEALLOCATE|DESCRIBE|SHOW|TABLES|SCHEMAS|INDEXES|SEQUENCES)\b/gi;
+
+    // SQL and DuckDB functions
+    const functions =
+      /\b(COUNT|SUM|AVG|MIN|MAX|ROUND|FLOOR|CEIL|CEILING|ABS|COALESCE|NULLIF|CAST|TRY_CAST|CONVERT|SUBSTRING|CONCAT|LENGTH|TRIM|LTRIM|RTRIM|UPPER|LOWER|REPLACE|SPLIT|SPLIT_PART|REGEXP_MATCHES|REGEXP_REPLACE|REGEXP_EXTRACT|CONTAINS|PREFIX|SUFFIX|POSITION|STRPOS|INSTR|LEFT|RIGHT|REPEAT|REVERSE|NOW|CURRENT_DATE|CURRENT_TIME|CURRENT_TIMESTAMP|DATE|TIME|TIMESTAMP|INTERVAL|YEAR|MONTH|DAY|HOUR|MINUTE|SECOND|EPOCH|EPOCH_MS|DATE_PART|DATE_TRUNC|DATE_ADD|DATE_SUB|DATE_DIFF|AGE|LAST_DAY|MONTHNAME|DAYNAME|WEEKDAY|WEEK|QUARTER|RANDOM|UUID|HASH|MD5|SHA256|BASE64|ENCODE|DECODE|LIST_VALUE|LIST_EXTRACT|LIST_ELEMENT|LIST_LENGTH|LIST_CONCAT|LIST_CONTAINS|LIST_DISTINCT|LIST_SORT|LIST_REVERSE|LIST_SLICE|LIST_AGGREGATE|LIST_FILTER|LIST_TRANSFORM|ARRAY_LENGTH|ARRAY_EXTRACT|ARRAY_SLICE|ARRAY_CONCAT|UNNEST|STRUCT_PACK|STRUCT_EXTRACT|JSON_EXTRACT|JSON_EXTRACT_PATH|JSON_EXTRACT_STRING|JSON_VALUE|JSON_QUERY|JSON_ARRAY_LENGTH|JSON_TYPE|JSON_VALID|JSON_OBJECT|JSON_ARRAY|JSON_MERGE_PATCH|TO_JSON|ROW_NUMBER|RANK|DENSE_RANK|PERCENT_RANK|CUME_DIST|NTILE|LEAD|LAG|FIRST_VALUE|LAST_VALUE|NTH_VALUE|MODE|MEDIAN|QUANTILE|QUANTILE_CONT|QUANTILE_DISC|MAD|STDDEV|STDDEV_POP|STDDEV_SAMP|VARIANCE|VAR_POP|VAR_SAMP|CORR|COVAR_POP|COVAR_SAMP|HISTOGRAM|APPROX_COUNT_DISTINCT|APPROX_QUANTILE|RESERVOIR_QUANTILE|GROUPING|GROUPING_ID|PIVOT_WIDER|UNPIVOT|EXCLUDE|COLUMNS|SEQUENCE|NEXTVAL|CURRVAL|GEN_RANDOM_UUID|SETSEED|RANGE|GENERATE_SERIES|GENERATE_SUBSCRIPTS|GLOB|GRADE_UP|PRAGMA_VERSION|CHECKPOINT|EXPORT_DATABASE|DUCKDB_EXTENSIONS|DUCKDB_FUNCTIONS|DUCKDB_KEYWORDS|DUCKDB_TYPES|DUCKDB_VIEWS|DUCKDB_TABLES|DUCKDB_COLUMNS|DUCKDB_CONSTRAINTS|DUCKDB_SCHEMAS|DUCKDB_INDEXES|DUCKDB_SEQUENCES)\b/gi;
+
+    // DuckDB data types
+    const types =
+      /\b(BOOLEAN|BOOL|TINYINT|SMALLINT|INTEGER|INT|BIGINT|HUGEINT|UHUGEINT|UTINYINT|USMALLINT|UINTEGER|UINT|UBIGINT|REAL|FLOAT|DOUBLE|DECIMAL|NUMERIC|VARCHAR|CHAR|BPCHAR|TEXT|STRING|BYTEA|BLOB|VARBINARY|BINARY|DATE|TIME|TIMESTAMP|TIMESTAMP_MS|TIMESTAMP_NS|TIMESTAMP_S|TIMESTAMPTZ|TIMETZ|INTERVAL|JSON|UUID|ENUM|LIST|ARRAY|STRUCT|MAP|UNION|BIT|BITSTRING)\b/gi;
+
+    // HTML escape
+    code = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    // Highlight in order: comments, strings, numbers, types, functions, keywords
+    code = code
+      // Single line comments
+      .replace(/(--[^\n]*)/g, '<span class="pondpilot-comment">$1</span>')
+      // Multi-line comments
+      .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="pondpilot-comment">$1</span>')
+      // Strings (single quotes)
+      .replace(/('(?:[^']|'')*')/g, '<span class="pondpilot-string">$1</span>')
+      // Numbers
+      .replace(/\b(\d+\.?\d*)\b/g, '<span class="pondpilot-number">$1</span>')
+      // Data types (with same style as keywords)
+      .replace(types, '<span class="pondpilot-keyword">$&</span>')
+      // Functions (before keywords to avoid conflicts)
+      .replace(functions, '<span class="pondpilot-function">$&</span>')
+      // Keywords
+      .replace(keywords, '<span class="pondpilot-keyword">$&</span>');
+
+    return code;
+  }
 
   // Widget class
   class PondPilotWidget {
@@ -267,14 +402,14 @@
     }
 
     extractCode() {
-      const pre = this.element.tagName === 'PRE' ? this.element : this.element.querySelector('pre');
-      const code = pre.querySelector('code') || pre;
+      const pre = this.element.tagName === "PRE" ? this.element : this.element.querySelector("pre");
+      const code = pre.querySelector("code") || pre;
       return code.textContent.trim();
     }
 
     init() {
       // Create widget container
-      this.widget = document.createElement('div');
+      this.widget = document.createElement("div");
       this.widget.className = `pondpilot-widget ${this.options.theme}`;
 
       // Create editor
@@ -284,6 +419,10 @@
       // Create minimal run button
       this.runButton = this.createRunButton();
       this.widget.appendChild(this.runButton);
+
+      // Create reset button
+      this.resetButton = this.createResetButton();
+      this.widget.appendChild(this.resetButton);
 
       // Create output area
       this.output = this.createOutput();
@@ -302,57 +441,113 @@
       // Replace original element
       this.element.parentNode.replaceChild(this.widget, this.element);
 
-      // Load DuckDB
+      // DuckDB will be loaded on first interaction
       this.duckdbReady = false;
-      this.initDuckDB();
     }
 
     createRunButton() {
-      const button = document.createElement('button');
-      button.className = 'pondpilot-run-button';
-      button.textContent = 'Run';
+      const button = document.createElement("button");
+      button.className = "pondpilot-run-button";
+      button.textContent = "Run";
       button.onclick = () => this.run();
       return button;
     }
 
+    createResetButton() {
+      const button = document.createElement("button");
+      button.className = "pondpilot-reset-button";
+      button.textContent = "Reset";
+      button.onclick = () => this.reset();
+      return button;
+    }
+
     createEditor() {
-      const editor = document.createElement('div');
-      editor.className = 'pondpilot-editor';
+      const editor = document.createElement("div");
+      editor.className = "pondpilot-editor";
       editor.contentEditable = this.options.editable !== false;
 
-      const pre = document.createElement('pre');
-      pre.textContent = this.originalCode;
+      const pre = document.createElement("pre");
+      pre.innerHTML = highlightSQL(this.originalCode);
       editor.appendChild(pre);
 
-      // Track changes
-      editor.addEventListener('input', () => {
-        this.currentCode = editor.textContent;
+      // Initialize current code
+      this.currentCode = this.originalCode;
+
+      // Track changes and re-highlight
+      editor.addEventListener("input", () => {
+        const text = editor.textContent;
+        this.currentCode = text;
+
+        // Store cursor position
+        const selection = window.getSelection();
+        const range = selection.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(editor);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+        const caretOffset = preCaretRange.toString().length;
+
+        // Re-highlight
+        pre.innerHTML = highlightSQL(text);
+
+        // Restore cursor position
+        const textNodes = [];
+        const walker = document.createTreeWalker(pre, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        while ((node = walker.nextNode())) {
+          textNodes.push(node);
+        }
+
+        let charCount = 0;
+        for (const textNode of textNodes) {
+          const nodeLength = textNode.textContent.length;
+          if (charCount + nodeLength >= caretOffset) {
+            const newRange = document.createRange();
+            newRange.setStart(textNode, caretOffset - charCount);
+            newRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+            break;
+          }
+          charCount += nodeLength;
+        }
+      });
+
+      // Add keyboard shortcut (Ctrl/Cmd + Enter to run)
+      editor.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          this.run();
+        }
       });
 
       return editor;
     }
 
     createOutput() {
-      const output = document.createElement('div');
-      output.className = 'pondpilot-output';
+      const output = document.createElement("div");
+      output.className = "pondpilot-output";
 
-      const content = document.createElement('div');
-      content.className = 'pondpilot-output-content';
+      const content = document.createElement("div");
+      content.className = "pondpilot-output-content";
       output.appendChild(content);
 
       return output;
     }
 
     createPoweredBy() {
-      const powered = document.createElement('div');
-      powered.className = 'pondpilot-powered';
+      const powered = document.createElement("div");
+      powered.className = "pondpilot-powered";
       powered.innerHTML = `<a href="${this.options.baseUrl}" target="_blank" rel="noopener">PondPilot</a>`;
       return powered;
     }
 
     createDuckLogo() {
-      const duck = document.createElement('div');
-      duck.className = 'pondpilot-duck';
+      const duck = document.createElement("a");
+      duck.href = this.options.baseUrl;
+      duck.target = "_blank";
+      duck.rel = "noopener";
+      duck.className = "pondpilot-duck";
+      duck.title = "Open in PondPilot";
       duck.innerHTML = `<svg viewBox="0 0 51 42" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
         <path d="M13.5 42C6.04416 42 3.25905e-07 35.9558 0 28.5C-3.25905e-07 21.0442 6.04415 15 13.5 15H25.5C32.9558 15 39 21.0442 39 28.5C39 35.9558 32.9558 42 25.5 42H13.5Z" fill-opacity="0.32"/>
         <path d="M31.5 27C24.0442 27 18 20.9558 18 13.5C18 6.04416 24.0442 3.25905e-07 31.5 0C38.9558 -3.25905e-07 45 6.04416 45 13.5C45 20.9558 38.9558 27 31.5 27Z"/>
@@ -366,109 +561,143 @@
 
     async initDuckDB() {
       try {
-        this.runButton.textContent = 'Loading...';
+        this.runButton.textContent = "Loading...";
         this.runButton.disabled = true;
-        
+
+        // Show loading progress
+        this.showProgress("Initializing DuckDB...", 0);
+
         // Use shared DuckDB instance if available
         if (!duckDBInitPromise) {
-          duckDBInitPromise = this.createSharedDuckDB();
+          duckDBInitPromise = this.createSharedDuckDB((progress, message) => {
+            this.showProgress(message, progress);
+          });
         }
-        
+
         await duckDBInitPromise;
-        
+
         // Create a connection to the shared database
+        this.showProgress("Creating connection...", 90);
         this.conn = await sharedDuckDB.connect();
-        
+
         this.duckdbReady = true;
-        this.runButton.textContent = 'Run';
+        this.runButton.textContent = "Run";
         this.runButton.disabled = false;
-        
+
+        // Hide progress
+        this.output.classList.remove("show");
       } catch (error) {
-        console.error('Failed to initialize DuckDB:', error);
-        this.runButton.textContent = 'Error';
-        this.showError('Failed to initialize DuckDB: ' + error.message);
+        console.error("Failed to initialize DuckDB:", error);
+        this.runButton.textContent = "Error";
+        this.showError("Failed to initialize DuckDB: " + error.message);
       }
     }
 
-    async createSharedDuckDB() {
-      // Dynamically import DuckDB WASM
-      const duckdbModule = await import(
-        'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.1-dev68.0/+esm'
-      );
-      const duckdb = duckdbModule;
-      
-      // Get the bundles from jsDelivr
-      const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
-      
-      // Select the best bundle for the browser
-      const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
-      
-      // Create the worker
-      const worker_url = URL.createObjectURL(
-        new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' }),
-      );
-      
-      const worker = new Worker(worker_url);
-      const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
-      
-      // Initialize the shared database
-      sharedDuckDB = new duckdb.AsyncDuckDB(logger, worker);
-      await sharedDuckDB.instantiate(bundle.mainModule, bundle.pthreadWorker);
-      
-      return sharedDuckDB;
+    showProgress(message, percent) {
+      const outputContent = this.output.querySelector(".pondpilot-output-content");
+      outputContent.innerHTML = `
+        <div class="pondpilot-progress">
+          <div class="pondpilot-progress-text">${message}</div>
+          <div class="pondpilot-progress-bar">
+            <div class="pondpilot-progress-fill" style="width: ${percent}%"></div>
+          </div>
+        </div>
+      `;
+      this.output.classList.add("show");
+    }
+
+    async createSharedDuckDB(progressCallback) {
+      try {
+        // Track which widget initiated the loading
+        this.progressCallback = progressCallback || (() => {});
+
+        // Dynamically import DuckDB WASM
+        this.progressCallback(10, "Loading DuckDB module...");
+        const duckdbModule = await import("https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.1-dev68.0/+esm");
+        const duckdb = duckdbModule;
+
+        // Get the bundles from jsDelivr
+        this.progressCallback(20, "Fetching bundles...");
+        const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
+
+        // Select the best bundle for the browser
+        this.progressCallback(30, "Selecting best bundle...");
+        const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+
+        // Create the worker
+        this.progressCallback(40, "Creating worker...");
+        const worker_url = URL.createObjectURL(new Blob([`importScripts("${bundle.mainWorker}");`], { type: "text/javascript" }));
+
+        const worker = new Worker(worker_url);
+        const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
+
+        // Initialize the shared database
+        this.progressCallback(60, "Initializing database...");
+        sharedDuckDB = new duckdb.AsyncDuckDB(logger, worker);
+
+        this.progressCallback(80, "Loading PondPilot module...");
+        await sharedDuckDB.instantiate(bundle.mainModule, bundle.pthreadWorker);
+
+        return sharedDuckDB;
+      } catch (error) {
+        throw error;
+      }
     }
 
     async run() {
-      if (!this.duckdbReady) {
-        this.showError('DuckDB is not ready yet');
-        return;
-      }
-
-      const code = this.editor.textContent.trim();
+      // Get plain text code, not HTML
+      const code = this.currentCode || this.editor.textContent.trim();
       if (!code) return;
 
+      // Initialize DuckDB on first run
+      if (!this.duckdbReady) {
+        await this.initDuckDB();
+        if (!this.duckdbReady) {
+          return; // Error was already shown by initDuckDB
+        }
+      }
+
       this.runButton.disabled = true;
-      this.runButton.textContent = 'Running...';
-      this.output.classList.add('show');
-      
-      const outputContent = this.output.querySelector('.pondpilot-output-content');
+      this.runButton.textContent = "Running...";
+      this.output.classList.add("show");
+
+      const outputContent = this.output.querySelector(".pondpilot-output-content");
       outputContent.innerHTML = '<div class="pondpilot-loading">Running query...</div>';
 
       try {
         const startTime = performance.now();
         const result = await this.conn.query(code);
         const elapsed = Math.round(performance.now() - startTime);
-        
+
         const table = result.toArray();
         const data = table.map((row) => row.toJSON());
-        
+
         this.displayResults(data, elapsed);
-        this.runButton.textContent = 'Run';
-        
+        this.runButton.textContent = "Run";
       } catch (error) {
         this.showError(error.message);
-        this.runButton.textContent = 'Run';
+        this.runButton.textContent = "Run";
       } finally {
         this.runButton.disabled = false;
       }
     }
 
     displayResults(data, elapsed) {
-      const outputContent = this.output.querySelector('.pondpilot-output-content');
-      
+      const outputContent = this.output.querySelector(".pondpilot-output-content");
+
       if (data.length === 0) {
         outputContent.innerHTML = '<div style="text-align: center; color: #6b7280;">No results</div>';
         return;
       }
 
       // Create table
-      const table = document.createElement('table');
-      
+      const table = document.createElement("table");
+
       // Header
-      const thead = document.createElement('thead');
-      const headerRow = document.createElement('tr');
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
       Object.keys(data[0]).forEach((key) => {
-        const th = document.createElement('th');
+        const th = document.createElement("th");
         th.textContent = key;
         headerRow.appendChild(th);
       });
@@ -476,51 +705,77 @@
       table.appendChild(thead);
 
       // Body
-      const tbody = document.createElement('tbody');
+      const tbody = document.createElement("tbody");
       data.forEach((row) => {
-        const tr = document.createElement('tr');
+        const tr = document.createElement("tr");
         Object.values(row).forEach((value) => {
-          const td = document.createElement('td');
-          td.textContent = value === null ? 'null' : value;
+          const td = document.createElement("td");
+          td.textContent = value === null ? "null" : value;
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
       });
       table.appendChild(tbody);
 
-      outputContent.innerHTML = '';
+      outputContent.innerHTML = "";
       outputContent.appendChild(table);
-      
-      // Add footer with info and reset
-      const footer = document.createElement('div');
-      footer.className = 'pondpilot-results-footer';
-      
+
+      // Add footer with info
+      const footer = document.createElement("div");
+      footer.className = "pondpilot-results-footer";
+
       // Row count and timing
-      const info = document.createElement('div');
-      info.className = 'pondpilot-results-info';
+      const info = document.createElement("div");
+      info.className = "pondpilot-results-info";
       info.textContent = `${data.length} rows • ${elapsed}ms`;
       footer.appendChild(info);
-      
-      // Reset button
-      const resetButton = document.createElement('button');
-      resetButton.className = 'pondpilot-reset-button';
-      resetButton.textContent = 'Reset';
-      resetButton.onclick = () => this.reset();
-      footer.appendChild(resetButton);
-      
+
       outputContent.appendChild(footer);
+
+      // Show reset button
+      this.resetButton.classList.add("show");
     }
 
     reset() {
-      this.editor.querySelector('pre').textContent = this.originalCode;
-      this.output.classList.remove('show');
-      this.runButton.textContent = 'Run';
+      this.editor.querySelector("pre").innerHTML = highlightSQL(this.originalCode);
+      this.output.classList.remove("show");
+      this.runButton.textContent = "Run";
+      this.resetButton.classList.remove("show");
+      this.currentCode = this.originalCode;
     }
 
     showError(message) {
-      const outputContent = this.output.querySelector('.pondpilot-output-content');
-      outputContent.innerHTML = `<div class="pondpilot-error">${message}</div>`;
-      this.output.classList.add('show');
+      const outputContent = this.output.querySelector(".pondpilot-output-content");
+
+      // Improve common error messages
+      let improvedMessage = message;
+      let suggestion = "";
+
+      if (message.includes("no such table") || message.includes("does not exist")) {
+        suggestion = "Tip: Make sure to CREATE TABLE before querying it.";
+      } else if (message.includes("syntax error") || message.includes("Parser Error")) {
+        suggestion = "Tip: Check your SQL syntax. Common issues: missing semicolon, typos in keywords.";
+      } else if (message.includes("no such column")) {
+        suggestion = "Tip: Check column names for typos and ensure they exist in the table.";
+      } else if (message.includes("SharedArrayBuffer") || message.includes("COOP") || message.includes("COEP")) {
+        improvedMessage = "Browser security error";
+        suggestion =
+          "Your browser requires special headers for DuckDB WASM. Try using Chrome or Firefox, or contact your site administrator.";
+      } else if (message.includes("Out of Memory")) {
+        improvedMessage = "Memory limit exceeded";
+        suggestion = "Tip: Try using LIMIT to reduce result size, or process data in smaller chunks.";
+      }
+
+      outputContent.innerHTML = `
+        <div class="pondpilot-error">
+          <div>${improvedMessage}</div>
+          ${suggestion ? `<div style="margin-top: 8px; opacity: 0.8; font-size: 11px;">${suggestion}</div>` : ""}
+        </div>
+      `;
+      this.output.classList.add("show");
+
+      // Show reset button on error
+      this.resetButton.classList.add("show");
     }
 
     async cleanup() {
@@ -535,9 +790,9 @@
   // Initialize widgets
   function init() {
     // Add styles
-    if (!document.getElementById('pondpilot-widget-styles')) {
-      const styleSheet = document.createElement('style');
-      styleSheet.id = 'pondpilot-widget-styles';
+    if (!document.getElementById("pondpilot-widget-styles")) {
+      const styleSheet = document.createElement("style");
+      styleSheet.id = "pondpilot-widget-styles";
       styleSheet.textContent = styles;
       document.head.appendChild(styleSheet);
     }
@@ -546,15 +801,15 @@
     const elements = document.querySelectorAll(config.selector);
     elements.forEach((element) => {
       if (!element.dataset.pondpilotWidget) {
-        element.dataset.pondpilotWidget = 'true';
+        element.dataset.pondpilotWidget = "true";
         new PondPilotWidget(element);
       }
     });
   }
 
   // Auto-initialize on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
   } else {
     init();
   }
