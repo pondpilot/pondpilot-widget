@@ -14,6 +14,10 @@
     autoInit: true,
   };
 
+  // Shared DuckDB instance
+  let sharedDuckDB = null;
+  let duckDBInitPromise = null;
+
   // Minimal widget styles
   const styles = `
     .pondpilot-widget {
@@ -365,32 +369,15 @@
         this.runButton.textContent = 'Loading...';
         this.runButton.disabled = true;
         
-        // Dynamically import DuckDB WASM
-        const duckdbModule = await import(
-          'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.1-dev68.0/+esm'
-        );
-        const duckdb = duckdbModule;
+        // Use shared DuckDB instance if available
+        if (!duckDBInitPromise) {
+          duckDBInitPromise = this.createSharedDuckDB();
+        }
         
-        // Get the bundles from jsDelivr
-        const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
+        await duckDBInitPromise;
         
-        // Select the best bundle for the browser
-        const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
-        
-        // Create the worker
-        const worker_url = URL.createObjectURL(
-          new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' }),
-        );
-        
-        const worker = new Worker(worker_url);
-        const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
-        
-        // Initialize the database
-        this.db = new duckdb.AsyncDuckDB(logger, worker);
-        await this.db.instantiate(bundle.mainModule, bundle.pthreadWorker);
-        
-        // Create connection
-        this.conn = await this.db.connect();
+        // Create a connection to the shared database
+        this.conn = await sharedDuckDB.connect();
         
         this.duckdbReady = true;
         this.runButton.textContent = 'Run';
@@ -401,6 +388,34 @@
         this.runButton.textContent = 'Error';
         this.showError('Failed to initialize DuckDB: ' + error.message);
       }
+    }
+
+    async createSharedDuckDB() {
+      // Dynamically import DuckDB WASM
+      const duckdbModule = await import(
+        'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.1-dev68.0/+esm'
+      );
+      const duckdb = duckdbModule;
+      
+      // Get the bundles from jsDelivr
+      const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
+      
+      // Select the best bundle for the browser
+      const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+      
+      // Create the worker
+      const worker_url = URL.createObjectURL(
+        new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' }),
+      );
+      
+      const worker = new Worker(worker_url);
+      const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
+      
+      // Initialize the shared database
+      sharedDuckDB = new duckdb.AsyncDuckDB(logger, worker);
+      await sharedDuckDB.instantiate(bundle.mainModule, bundle.pthreadWorker);
+      
+      return sharedDuckDB;
     }
 
     async run() {
@@ -506,6 +521,14 @@
       const outputContent = this.output.querySelector('.pondpilot-output-content');
       outputContent.innerHTML = `<div class="pondpilot-error">${message}</div>`;
       this.output.classList.add('show');
+    }
+
+    async cleanup() {
+      // Close the connection when widget is destroyed
+      if (this.conn) {
+        await this.conn.close();
+        this.conn = null;
+      }
     }
   }
 
