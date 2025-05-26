@@ -43,6 +43,16 @@
           i = j;
           continue;
         }
+        
+        // Multi-line comments
+        if (sqlString[i] === '/' && sqlString[i + 1] === '*') {
+          let j = i + 2;
+          while (j < len - 1 && !(sqlString[j] === '*' && sqlString[j + 1] === '/')) j++;
+          if (j < len - 1) j += 2;
+          segments.push({ name: 'comment', content: sqlString.slice(i, j) });
+          i = j;
+          continue;
+        }
 
         // Strings
         if (sqlString[i] === "'" || sqlString[i] === '"') {
@@ -129,12 +139,34 @@
     return { highlight, getSegments };
   })();
 
+  // Constants
+  const CONSTANTS = {
+    DEBOUNCE_DELAY: 150, // ms
+    LARGE_SQL_THRESHOLD: 500, // characters
+    MAX_OUTPUT_HEIGHT: 300, // px
+    PROGRESS_STEPS: {
+      MODULE_LOADING: 10,
+      FETCHING_BUNDLES: 20,
+      SELECTING_BUNDLE: 30,
+      CREATING_WORKER: 40,
+      INITIALIZING_DB: 60,
+      LOADING_MODULE: 80,
+      CREATING_CONNECTION: 90,
+      COMPLETE: 100
+    }
+  };
+
   // Widget configuration
   const config = {
     selector: "pre.pondpilot-snippet, .pondpilot-snippet pre",
     baseUrl: window.PONDPILOT_BASE_URL || "http://localhost:5173",
     theme: "light",
     autoInit: true,
+    // DuckDB CDN settings - update version and add integrity hashes for security
+    duckdbVersion: "1.29.1-dev68.0",
+    duckdbCDN: "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm",
+    // Optional: Add integrity hashes when available from DuckDB releases
+    // duckdbIntegrity: { main: "sha384-...", worker: "sha384-..." }
   };
 
   // Shared DuckDB instance
@@ -257,7 +289,7 @@
     .pondpilot-output {
       background: rgba(0, 0, 0, 0.02);
       border-top: 1px solid rgba(0, 0, 0, 0.06);
-      max-height: 300px;
+      max-height: ` + CONSTANTS.MAX_OUTPUT_HEIGHT + `px;
       overflow: auto;
       display: none;
       font-size: 12px;
@@ -487,6 +519,28 @@
   `;
 
 
+  // Utility functions
+  function escapeHtml(unsafe) {
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
   // Widget class
   class PondPilotWidget {
     constructor(element, options = {}) {
@@ -544,6 +598,7 @@
       const button = document.createElement("button");
       button.className = "pondpilot-run-button";
       button.textContent = "Run";
+      button.setAttribute('aria-label', 'Run SQL query');
       button.onclick = () => this.run();
       return button;
     }
@@ -552,8 +607,52 @@
       const button = document.createElement("button");
       button.className = "pondpilot-reset-button";
       button.textContent = "Reset";
+      button.setAttribute('aria-label', 'Reset to original SQL');
       button.onclick = () => this.reset();
       return button;
+    }
+
+    getCursorOffset(element, range) {
+      const preRange = range.cloneRange();
+      preRange.selectNodeContents(element);
+      preRange.setEnd(range.endContainer, range.endOffset);
+      return preRange.toString().length;
+    }
+
+    setCursorOffset(element, offset) {
+      const textNodes = this.getTextNodes(element);
+      let currentOffset = 0;
+      
+      for (const node of textNodes) {
+        const nodeLength = node.textContent.length;
+        if (currentOffset + nodeLength >= offset) {
+          const range = document.createRange();
+          range.setStart(node, offset - currentOffset);
+          range.collapse(true);
+          
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          break;
+        }
+        currentOffset += nodeLength;
+      }
+    }
+
+    getTextNodes(element) {
+      const textNodes = [];
+      const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+      );
+      
+      let node;
+      while (node = walker.nextNode()) {
+        textNodes.push(node);
+      }
+      return textNodes;
     }
 
     createEditor() {
@@ -571,15 +670,52 @@
       if (this.options.editable !== false) {
         pre.contentEditable = true;
         pre.spellcheck = false;
+        pre.setAttribute('role', 'textbox');
+        pre.setAttribute('aria-label', 'SQL editor');
+        pre.setAttribute('aria-multiline', 'true');
+        
+        // Create debounced highlight function
+        const highlightDebounced = debounce((text, cursorOffset) => {
+          // Re-highlight
+          pre.innerHTML = sqlHighlight.highlight(text, { html: true });
+          
+          // Restore cursor position
+          this.setCursorOffset(pre, cursorOffset);
+          
+          // Update reset button visibility
+          if (text !== this.originalCode) {
+            this.resetButton.classList.add("show");
+          } else {
+            this.resetButton.classList.remove("show");
+          }
+        }, CONSTANTS.DEBOUNCE_DELAY); // Debounce for smooth typing
         
         // Track changes and re-highlight
         pre.addEventListener("input", () => {
           const text = pre.textContent;
           this.currentCode = text;
           
-          // Simple approach: update without preserving cursor
-          // sql-highlight is fast enough that typing feels smooth
-          pre.innerHTML = sqlHighlight.highlight(text, { html: true });
+          // Preserve cursor position
+          const selection = window.getSelection();
+          const range = selection.getRangeAt(0);
+          const cursorOffset = this.getCursorOffset(pre, range);
+          
+          // For small text, highlight immediately, for large text debounce
+          if (text.length < CONSTANTS.LARGE_SQL_THRESHOLD) {
+            // Re-highlight immediately for small SQL
+            pre.innerHTML = sqlHighlight.highlight(text, { html: true });
+            this.setCursorOffset(pre, cursorOffset);
+            
+            // Update reset button visibility
+            if (text !== this.originalCode) {
+              this.resetButton.classList.add("show");
+            } else {
+              this.resetButton.classList.remove("show");
+            }
+          } else {
+            // Debounce for large SQL
+            highlightDebounced(text, cursorOffset);
+          }
         });
       }
 
@@ -648,7 +784,7 @@
         await duckDBInitPromise;
 
         // Create a connection to the shared database
-        this.showProgress("Creating connection...", 90);
+        this.showProgress("Creating connection...", CONSTANTS.PROGRESS_STEPS.CREATING_CONNECTION);
         this.conn = await sharedDuckDB.connect();
 
         this.duckdbReady = true;
@@ -666,11 +802,12 @@
 
     showProgress(message, percent) {
       const outputContent = this.output.querySelector(".pondpilot-output-content");
+      const safePercent = Math.min(100, Math.max(0, percent));
       outputContent.innerHTML = `
-        <div class="pondpilot-progress">
-          <div class="pondpilot-progress-text">${message}</div>
-          <div class="pondpilot-progress-bar">
-            <div class="pondpilot-progress-fill" style="width: ${percent}%"></div>
+        <div class="pondpilot-progress" role="status" aria-live="polite">
+          <div class="pondpilot-progress-text">${escapeHtml(message)}</div>
+          <div class="pondpilot-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${safePercent}" aria-label="Loading progress">
+            <div class="pondpilot-progress-fill" style="width: ${safePercent}%"></div>
           </div>
         </div>
       `;
@@ -683,30 +820,41 @@
         this.progressCallback = progressCallback || (() => {});
 
         // Dynamically import DuckDB WASM
-        this.progressCallback(10, "Loading DuckDB module...");
-        const duckdbModule = await import("https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.1-dev68.0/+esm");
+        this.progressCallback(CONSTANTS.PROGRESS_STEPS.MODULE_LOADING, "Loading DuckDB module...");
+        const duckdbUrl = `${config.duckdbCDN}@${config.duckdbVersion}/+esm`;
+        const duckdbModule = await import(duckdbUrl);
         const duckdb = duckdbModule;
 
         // Get the bundles from jsDelivr
-        this.progressCallback(20, "Fetching bundles...");
+        this.progressCallback(CONSTANTS.PROGRESS_STEPS.FETCHING_BUNDLES, "Fetching bundles...");
         const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
 
         // Select the best bundle for the browser
-        this.progressCallback(30, "Selecting best bundle...");
+        this.progressCallback(CONSTANTS.PROGRESS_STEPS.SELECTING_BUNDLE, "Selecting best bundle...");
         const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
 
-        // Create the worker
-        this.progressCallback(40, "Creating worker...");
-        const worker_url = URL.createObjectURL(new Blob([`importScripts("${bundle.mainWorker}");`], { type: "text/javascript" }));
-
-        const worker = new Worker(worker_url);
+        // Create the worker - try direct URL first for CSP compatibility
+        this.progressCallback(CONSTANTS.PROGRESS_STEPS.CREATING_WORKER, "Creating worker...");
+        let worker;
+        try {
+          // First try direct worker URL (CSP-friendly)
+          worker = new Worker(bundle.mainWorker);
+        } catch (e) {
+          // Fallback to blob URL if direct loading fails
+          try {
+            const worker_url = URL.createObjectURL(new Blob([`importScripts("${bundle.mainWorker}");`], { type: "text/javascript" }));
+            worker = new Worker(worker_url);
+          } catch (blobError) {
+            throw new Error("Failed to create worker. This may be due to Content Security Policy restrictions. Please ensure your site allows worker-src 'self' blob: or use a CSP-compatible hosting setup.");
+          }
+        }
         const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
 
         // Initialize the shared database
-        this.progressCallback(60, "Initializing database...");
+        this.progressCallback(CONSTANTS.PROGRESS_STEPS.INITIALIZING_DB, "Initializing database...");
         sharedDuckDB = new duckdb.AsyncDuckDB(logger, worker);
 
-        this.progressCallback(80, "Loading PondPilot module...");
+        this.progressCallback(CONSTANTS.PROGRESS_STEPS.LOADING_MODULE, "Loading PondPilot module...");
         await sharedDuckDB.instantiate(bundle.mainModule, bundle.pthreadWorker);
 
         return sharedDuckDB;
@@ -780,7 +928,7 @@
         const tr = document.createElement("tr");
         Object.values(row).forEach((value) => {
           const td = document.createElement("td");
-          td.textContent = value === null ? "null" : value;
+          td.textContent = value === null ? "null" : String(value);
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -837,9 +985,9 @@
       }
 
       outputContent.innerHTML = `
-        <div class="pondpilot-error">
-          <div>${improvedMessage}</div>
-          ${suggestion ? `<div style="margin-top: 8px; opacity: 0.8; font-size: 11px;">${suggestion}</div>` : ""}
+        <div class="pondpilot-error" role="alert" aria-live="assertive">
+          <div>${escapeHtml(improvedMessage)}</div>
+          ${suggestion ? `<div style="margin-top: 8px; opacity: 0.8; font-size: 11px;">${escapeHtml(suggestion)}</div>` : ""}
         </div>
       `;
       this.output.classList.add("show");
@@ -854,8 +1002,30 @@
         await this.conn.close();
         this.conn = null;
       }
+      // Remove event listeners
+      if (this.highlightDebounced) {
+        this.highlightDebounced = null;
+      }
+    }
+
+    destroy() {
+      // Call async cleanup
+      this.cleanup().catch(console.error);
+      
+      // Remove from instances
+      widgetInstances.delete(this.widget);
+      
+      // Clear references
+      this.widget = null;
+      this.editor = null;
+      this.output = null;
+      this.runButton = null;
+      this.resetButton = null;
     }
   }
+
+  // Track all widget instances for cleanup
+  const widgetInstances = new WeakMap();
 
   // Initialize widgets
   function init() {
@@ -872,7 +1042,8 @@
     elements.forEach((element) => {
       if (!element.dataset.pondpilotWidget) {
         element.dataset.pondpilotWidget = "true";
-        new PondPilotWidget(element);
+        const widget = new PondPilotWidget(element);
+        widgetInstances.set(widget.widget, widget);
       }
     });
   }
@@ -884,10 +1055,51 @@
     init();
   }
 
+  // Set up mutation observer to clean up removed widgets
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.removedNodes.forEach((node) => {
+        // Check if the removed node or its descendants contain widgets
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const widgets = node.classList?.contains('pondpilot-widget') 
+            ? [node] 
+            : node.querySelectorAll?.('.pondpilot-widget') || [];
+          
+          widgets.forEach((widgetElement) => {
+            const widget = widgetInstances.get(widgetElement);
+            if (widget) {
+              widget.destroy();
+            }
+          });
+        }
+      });
+    });
+  });
+
+  // Start observing once DOM is ready
+  if (document.body) {
+    observer.observe(document.body, { childList: true, subtree: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+  }
+
   // Expose API
   window.PondPilot = {
     init,
     Widget: PondPilotWidget,
     config,
+    destroy: () => {
+      // Clean up all widgets
+      document.querySelectorAll('.pondpilot-widget').forEach((element) => {
+        const widget = widgetInstances.get(element);
+        if (widget) {
+          widget.destroy();
+        }
+      });
+      // Stop observing
+      observer.disconnect();
+    }
   };
 })();
