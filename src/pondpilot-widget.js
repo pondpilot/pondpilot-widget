@@ -581,11 +581,11 @@
       if (this.options.showPoweredBy !== false) {
         this.poweredBy = this.createPoweredBy();
         this.widget.appendChild(this.poweredBy);
+        
+        // Add duck watermark only when branding is shown
+        this.duck = this.createDuckLogo();
+        this.widget.appendChild(this.duck);
       }
-
-      // Add duck watermark
-      this.duck = this.createDuckLogo();
-      this.widget.appendChild(this.duck);
 
       // Replace original element
       this.element.parentNode.replaceChild(this.widget, this.element);
