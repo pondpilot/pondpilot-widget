@@ -285,12 +285,24 @@
       background: #1a1b26;
     }
 
-    /* Minimal floating run button */
-    .pondpilot-run-button {
+    /* Button container for better layout control */
+    .pondpilot-button-container {
       position: absolute;
       top: 8px;
       right: 8px;
       z-index: 10;
+      display: flex;
+      gap: 4px;
+      pointer-events: none;
+    }
+
+    .pondpilot-button-container > * {
+      pointer-events: auto;
+    }
+
+    /* Minimal floating run button */
+    .pondpilot-run-button {
+      position: static;
       padding: 4px 12px;
       background: rgba(59, 130, 246, 0.9);
       color: white;
@@ -301,6 +313,7 @@
       cursor: pointer;
       transition: all 0.15s ease;
       backdrop-filter: blur(8px);
+      white-space: nowrap;
     }
 
     .pondpilot-run-button:hover {
@@ -315,10 +328,7 @@
 
     /* Reset button in editor */
     .pondpilot-reset-button {
-      position: absolute;
-      top: 8px;
-      right: 60px;
-      z-index: 10;
+      position: static;
       padding: 4px 8px;
       background: rgba(107, 114, 128, 0.1);
       color: #6b7280;
@@ -330,6 +340,7 @@
       transition: all 0.15s ease;
       opacity: 0;
       visibility: hidden;
+      white-space: nowrap;
     }
 
     .pondpilot-widget:hover .pondpilot-reset-button.show,
@@ -358,7 +369,7 @@
     .pondpilot-editor pre {
       margin: 0;
       padding: 16px;
-      padding-right: 60px;
+      padding-right: 90px;
       background: transparent;
       border: none;
       font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
@@ -368,6 +379,22 @@
       white-space: pre-wrap;
       word-wrap: break-word;
       tab-size: 2;
+    }
+
+    /* Responsive button spacing for smaller screens */
+    @media (max-width: 480px) {
+      .pondpilot-editor pre {
+        padding-right: 16px;
+        padding-top: 48px;
+      }
+      
+      .pondpilot-button-container {
+        top: 8px;
+        right: 8px;
+        left: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
     }
 
     .pondpilot-widget.dark .pondpilot-editor pre {
@@ -656,13 +683,9 @@
       this.editor = this.createEditor();
       this.widget.appendChild(this.editor);
 
-      // Create minimal run button
-      this.runButton = this.createRunButton();
-      this.widget.appendChild(this.runButton);
-
-      // Create reset button
-      this.resetButton = this.createResetButton();
-      this.widget.appendChild(this.resetButton);
+      // Create button container with run and reset buttons
+      this.buttonContainer = this.createButtonContainer();
+      this.widget.appendChild(this.buttonContainer);
 
       // Create output area
       this.output = this.createOutput();
@@ -683,6 +706,21 @@
 
       // DuckDB will be loaded on first interaction
       this.duckdbReady = false;
+    }
+
+    createButtonContainer() {
+      const container = document.createElement("div");
+      container.className = "pondpilot-button-container";
+      
+      // Create reset button first (appears left in flex)
+      this.resetButton = this.createResetButton();
+      container.appendChild(this.resetButton);
+      
+      // Create run button (appears right in flex)
+      this.runButton = this.createRunButton();
+      container.appendChild(this.runButton);
+      
+      return container;
     }
 
     createRunButton() {
