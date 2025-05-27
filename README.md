@@ -1,35 +1,70 @@
 # PondPilot Widget
 
-Transform static SQL code blocks into interactive snippets powered by DuckDB WASM
+[![npm version](https://img.shields.io/npm/v/pondpilot-widget.svg)](https://www.npmjs.com/package/pondpilot-widget)
+[![npm downloads](https://img.shields.io/npm/dm/pondpilot-widget.svg)](https://www.npmjs.com/package/pondpilot-widget)
+[![CDN hits](https://img.shields.io/jsdelivr/npm/hm/pondpilot-widget)](https://www.jsdelivr.com/package/npm/pondpilot-widget)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+Transform static SQL code blocks into interactive snippets powered by DuckDB WASM.
 
 ## Features
 
-- 🚀 **Zero Backend Required** - Runs entirely in the browser using DuckDB WASM
-- ✏️ **Editable Code** - Users can modify and run SQL queries
-- 🎨 **Syntax Highlighting** - Beautiful SQL syntax highlighting
-- 📊 **Rich Output** - Display query results in formatted tables
-- 🔗 **PondPilot Integration** - "Open in PondPilot" button for advanced features
-- 🌙 **Dark Mode Support** - Automatic theme detection
-- 📱 **Responsive Design** - Works on all screen sizes
+- 🦆 **DuckDB in the Browser** - Full SQL analytics engine running locally
+- ✨ **Zero Backend** - Everything runs client-side in WebAssembly
+- 🎨 **Syntax Highlighting** - Beautiful SQL code formatting with cursor preservation
+- ⚡ **Instant Results** - Execute queries with one click or Ctrl/Cmd+Enter
+- 🔧 **Easy Integration** - Works with any static site or documentation
+- ♿ **Accessible** - Full ARIA support and keyboard navigation
+- 🎯 **Lightweight** - Only ~22KB minified, loads DuckDB on-demand
+- 🌙 **Dark Mode** - Automatic theme detection or manual control
+- 🔒 **Secure** - No data leaves the browser, CSP-compatible
+
+## Installation
+
+### NPM
+```bash
+npm install pondpilot-widget
+```
+
+### Yarn
+```bash
+yarn add pondpilot-widget
+```
+
+### CDN
+```html
+<!-- Latest version -->
+<script src="https://unpkg.com/pondpilot-widget"></script>
+
+<!-- Specific version -->
+<script src="https://unpkg.com/pondpilot-widget@1.0.0"></script>
+
+<!-- Alternative CDN -->
+<script src="https://cdn.jsdelivr.net/npm/pondpilot-widget"></script>
+```
 
 ## Quick Start
 
-### 1. Add the Script
+### 1. Add the Widget
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/pondpilot/pondpilot-widget/widget/pondpilot-widget.min.js"></script>
+<!-- Via CDN -->
+<script src="https://unpkg.com/pondpilot-widget"></script>
+
+<!-- Or via NPM/bundler -->
+<script type="module">
+  import 'pondpilot-widget';
+</script>
 ```
 
-### 2. Mark Your Code Blocks
-
-Add the class `pondpilot-snippet` to any `<pre>` tag containing SQL:
+### 2. Mark Your SQL Code Blocks
 
 ```html
 <pre class="pondpilot-snippet">
 SELECT
-    'Hello World' as greeting,
-    42 as answer,
-    CURRENT_DATE as today;
+  'Hello World' as greeting,
+  42 as answer,
+  CURRENT_DATE as today;
 </pre>
 ```
 
@@ -37,206 +72,169 @@ SELECT
 
 The widget automatically transforms your static code blocks into interactive SQL editors.
 
-## Installation Options
+## Usage Examples
 
-### CDN (Recommended)
-
-```html
-<!-- Production -->
-<script src="https://cdn.jsdelivr.net/gh/pondpilot/pondpilot-widget/widget/pondpilot-widget.min.js"></script>
-
-<!-- Development -->
-<script src="https://cdn.jsdelivr.net/gh/pondpilot/pondpilot-widget/widget/pondpilot-widget.js"></script>
-```
-
-### NPM
-
-```bash
-npm install pondpilot-widget
-```
+### Basic Configuration
 
 ```javascript
-import PondPilot from 'pondpilot-widget';
+// Configure before initialization
+window.PondPilot.config.theme = 'dark';
+window.PondPilot.config.showPoweredBy = false;
 
-// Initialize widgets
-PondPilot.init();
-```
-
-### Self-Hosted
-
-Download the widget file and host it on your server:
-
-```html
-<script src="/path/to/pondpilot-widget.min.js"></script>
-```
-
-## Configuration
-
-### Global Configuration
-
-```html
-<script>
-// Set before loading the widget
-window.PONDPILOT_BASE_URL = 'https://app.pondpilot.io';
-</script>
-<script src="path/to/pondpilot-widget.js"></script>
-```
-
-### Programmatic Configuration
-
-```javascript
-// After loading the widget
-PondPilot.config.theme = 'dark';
-PondPilot.config.editable = false;
-PondPilot.config.selector = '.my-sql-blocks';
-
-// Re-initialize with new config
-PondPilot.init();
-```
-
-### Per-Widget Options
-
-```javascript
-// Initialize specific element with custom options
-const element = document.querySelector('#my-sql-block');
+// Or initialize with options
 new PondPilot.Widget(element, {
   theme: 'dark',
   editable: false,
-  baseUrl: 'https://custom-instance.com'
+  showPoweredBy: false
 });
 ```
 
-## Styling
+### Framework Integration
 
-The widget comes with default styles that work well with most websites. You can customize the appearance using CSS:
+#### React
+```jsx
+import { useEffect, useRef } from 'react';
+import 'pondpilot-widget';
 
-```css
-/* Customize widget appearance */
-.pondpilot-widget {
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+function SQLEditor({ sql, ...options }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      const widget = new window.PondPilot.Widget(ref.current, options);
+      return () => widget.destroy();
+    }
+  }, []);
+
+  return <pre ref={ref} className="pondpilot-snippet">{sql}</pre>;
 }
+```
 
-.pondpilot-toolbar {
-  background: #f0f0f0;
+#### Vue
+```vue
+<template>
+  <pre ref="editor" class="pondpilot-snippet">{{ sql }}</pre>
+</template>
+
+<script>
+import 'pondpilot-widget';
+
+export default {
+  props: ['sql', 'options'],
+  mounted() {
+    this.widget = new window.PondPilot.Widget(this.$refs.editor, this.options);
+  },
+  beforeUnmount() {
+    this.widget?.destroy();
+  }
 }
-
-.pondpilot-button-primary {
-  background: #your-brand-color;
-}
+</script>
 ```
 
-## Examples
+### Markdown/Documentation Sites
 
-### Basic Query
-
-```html
-<pre class="pondpilot-snippet">
-SELECT * FROM generate_series(1, 10) AS t(num);
-</pre>
+#### Docusaurus
+```javascript
+// In docusaurus.config.js
+module.exports = {
+  scripts: [
+    'https://unpkg.com/pondpilot-widget'
+  ],
+  // ...
+};
 ```
 
-### Creating Tables
+#### VitePress
+```javascript
+// In .vitepress/theme/index.js
+import DefaultTheme from 'vitepress/theme';
+import 'pondpilot-widget';
 
-```html
-<pre class="pondpilot-snippet">
-CREATE TABLE products (
-    id INTEGER PRIMARY KEY,
-    name VARCHAR(100),
-    price DECIMAL(10, 2)
-);
-
-INSERT INTO products VALUES
-    (1, 'Laptop', 999.99),
-    (2, 'Mouse', 29.99),
-    (3, 'Keyboard', 79.99);
-
-SELECT * FROM products WHERE price < 100;
-</pre>
+export default DefaultTheme;
 ```
 
-### Analytics Query
+## Configuration Options
 
-```html
-<pre class="pondpilot-snippet">
-WITH monthly_sales AS (
-    SELECT
-        DATE_TRUNC('month', order_date) as month,
-        SUM(amount) as total_sales
-    FROM orders
-    GROUP BY 1
-)
-SELECT
-    month,
-    total_sales,
-    LAG(total_sales) OVER (ORDER BY month) as prev_month,
-    total_sales - LAG(total_sales) OVER (ORDER BY month) as growth
-FROM monthly_sales;
-</pre>
-```
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `selector` | string | `"pre.pondpilot-snippet, .pondpilot-snippet pre"` | CSS selector for SQL blocks |
+| `theme` | string | `"light"` | Theme: "light" or "dark" |
+| `editable` | boolean | `true` | Allow editing SQL code |
+| `showPoweredBy` | boolean | `true` | Show "Powered by PondPilot" branding |
+| `baseUrl` | string | `"http://localhost:5173"` | PondPilot instance URL |
+| `autoInit` | boolean | `true` | Auto-initialize on DOM ready |
 
 ## API Reference
 
-### `PondPilot.init()`
-
-Initialize all widgets on the page.
-
+### Global Object
 ```javascript
-PondPilot.init();
+window.PondPilot = {
+  init(),           // Initialize all widgets
+  destroy(),        // Clean up all widgets
+  config: {},       // Global configuration
+  Widget: class {}  // Widget constructor
+};
 ```
 
-### `PondPilot.Widget`
-
-The widget class for programmatic control.
-
+### Widget Instance
 ```javascript
 const widget = new PondPilot.Widget(element, options);
 
 // Methods
-widget.run();        // Execute the SQL
-widget.reset();      // Reset to original code
-widget.openInApp();  // Open in PondPilot app
+await widget.run();      // Execute SQL query
+widget.reset();          // Reset to original code
+await widget.cleanup();  // Clean up resources
+widget.destroy();        // Destroy widget
 ```
 
-### `PondPilot.config`
+## Security Considerations
 
-Global configuration object.
+1. **Content Security Policy (CSP)**
+   ```
+   Content-Security-Policy:
+     script-src 'self' https://unpkg.com https://cdn.jsdelivr.net;
+     worker-src 'self' blob: https://cdn.jsdelivr.net;
+     connect-src 'self' https://cdn.jsdelivr.net;
+   ```
 
-```javascript
-PondPilot.config = {
-  selector: 'pre.pondpilot-snippet',  // CSS selector for widgets
-  baseUrl: 'https://app.pondpilot.com', // PondPilot instance URL
-  theme: 'light',                      // 'light' or 'dark'
-  autoInit: true,                      // Auto-initialize on load
-  editable: true                       // Allow editing by default
-};
-```
+2. **Subresource Integrity (SRI)**
+   ```html
+   <script
+     src="https://unpkg.com/pondpilot-widget@1.0.0"
+     integrity="sha384-[hash]"
+     crossorigin="anonymous">
+   </script>
+   ```
 
 ## Browser Support
 
-- Chrome 88+
+- Chrome/Edge 88+
 - Firefox 89+
 - Safari 15+
-- Edge 88+
 
-The widget requires:
-- Web Workers
+Requires:
 - WebAssembly
-- ES6 support
+- Web Workers
+- ES2018+
 
-## Security
+## Performance Tips
 
-The widget runs SQL queries in a sandboxed DuckDB WASM instance. Each widget has its own isolated database context, and no data is sent to any server.
+1. **Lazy Loading**: DuckDB is only loaded when first query runs
+2. **Shared Instance**: Multiple widgets share the same DuckDB instance
+3. **Resource Cleanup**: Widgets automatically clean up when removed from DOM
+
+## Changelog
+
+See [CHANGELOG.md](https://github.com/pondpilot/pondpilot-widget/blob/main/CHANGELOG.md) for release history.
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT © PondPilot
 
 ## Contributing
 
-Contributions are welcome! Please read our contributing guidelines and submit pull requests to our repository.
+Contributions welcome! Please read our [contributing guide](https://github.com/pondpilot/pondpilot-widget/blob/main/CONTRIBUTING.md).
 
 ## Support
 
-- 📖 [Documentation](https://docs.pondpilot.io/widget)
 - 🐛 [Issue Tracker](https://github.com/pondpilot/pondpilot-widget/issues)

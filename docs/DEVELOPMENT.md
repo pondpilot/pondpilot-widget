@@ -115,7 +115,7 @@ This creates:
 
 3. **Test CDN loading**
    ```html
-   <script src="https://cdn.jsdelivr.net/gh/pondpilot/pondpilot-widget@latest/dist/pondpilot-widget.min.js"></script>
+   <script src="https://unpkg.com/pondpilot-widget@latest"></script>
    ```
 
 4. **Publish to NPM**
@@ -151,23 +151,27 @@ All styles are in the `styles` constant. Follow the existing patterns:
 
 ### DuckDB Version
 
-Update DuckDB version in `initDuckDB()`:
+The DuckDB version is configured in the widget:
 ```javascript
-const duckdbModule = await import(
-  'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@NEW_VERSION/+esm'
-);
+// In config object
+duckdbVersion: "1.29.1-dev68.0"
+
+// To update, change the version in config and rebuild
 ```
 
 ## Troubleshooting
 
 ### SharedArrayBuffer Issues
-- Chrome requires specific CORS headers
-- Use Safari for development
-- Or serve with proper headers:
+DuckDB WASM requires SharedArrayBuffer, which needs specific headers in Chrome/Edge:
+
+- Use Safari for development (no headers required)
+- Or serve with proper COOP/COEP headers:
   ```
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   ```
+- Firefox works without headers in local development
+- Production servers must include these headers for Chrome/Edge
 
 ### Build Errors
 - Ensure Node.js >= 14

@@ -3,12 +3,27 @@
   "version": "1.0.0",
   "description": "Transform static SQL code blocks into interactive snippets powered by DuckDB WASM",
   "main": "dist/pondpilot-widget.min.js",
+  "browser": "dist/pondpilot-widget.min.js",
+  "module": "dist/pondpilot-widget.js",
+  "types": "dist/pondpilot-widget.d.ts",
   "unpkg": "dist/pondpilot-widget.min.js",
   "jsdelivr": "dist/pondpilot-widget.min.js",
+  "exports": {
+    ".": {
+      "import": "./dist/pondpilot-widget.js",
+      "require": "./dist/pondpilot-widget.min.js",
+      "script": "./dist/pondpilot-widget.min.js",
+      "default": "./dist/pondpilot-widget.min.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": true,
   "scripts": {
     "build": "node build.js",
     "dev": "python3 -m http.server 8000",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"No tests yet\" && exit 0",
+    "prepublishOnly": "npm run build",
+    "version": "npm run build && git add -A dist"
   },
   "keywords": [
     "sql",
@@ -18,7 +33,11 @@
     "code-snippets",
     "wasm",
     "database",
-    "analytics"
+    "analytics",
+    "sql-editor",
+    "browser",
+    "no-backend",
+    "embeddable"
   ],
   "author": "PondPilot",
   "license": "MIT",
@@ -26,17 +45,21 @@
     "type": "git",
     "url": "https://github.com/pondpilot/pondpilot-widget.git"
   },
+  "homepage": "https://github.com/pondpilot/pondpilot-widget#readme",
+  "bugs": {
+    "url": "https://github.com/pondpilot/pondpilot-widget/issues"
+  },
   "files": [
     "dist/",
-    "src/",
-    "examples/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
   "devDependencies": {
     "terser": "^5.24.0"
-  },
-  "peerDependencies": {
-    "@duckdb/duckdb-wasm": "^1.29.0"
   }
 }

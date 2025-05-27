@@ -9,7 +9,7 @@ SELECT * FROM users;
 </pre>
 
 <!-- Load the widget -->
-<script src="https://cdn.jsdelivr.net/gh/pondpilot/pondpilot-widget@latest/dist/pondpilot-widget.min.js"></script>
+<script src="https://unpkg.com/pondpilot-widget@latest"></script>
 ```
 
 ## Global Configuration
@@ -35,6 +35,14 @@ Manually initialize all widgets on the page:
 PondPilot.init();
 ```
 
+### `PondPilot.destroy()`
+
+Clean up all widgets and stop observing DOM changes:
+
+```javascript
+PondPilot.destroy();
+```
+
 ### `PondPilot.Widget`
 
 The widget constructor for programmatic initialization:
@@ -50,9 +58,11 @@ const widget = new PondPilot.Widget(element, options);
 #### Options:
 - `theme` (String): 'light' or 'dark' (default: 'light')
 - `editable` (Boolean): Whether the SQL can be edited (default: true)
-- `showPoweredBy` (Boolean): Show/hide PondPilot branding (default: true)
+- `showPoweredBy` (Boolean): Show/hide PondPilot branding and duck logo (default: true)
 - `baseUrl` (String): Override the base URL for this widget
 - `selector` (String): CSS selector for auto-initialization
+- `duckdbVersion` (String): DuckDB WASM version to use
+- `duckdbCDN` (String): CDN URL for DuckDB WASM
 
 ### `PondPilot.config`
 
@@ -60,10 +70,12 @@ Global configuration object:
 
 ```javascript
 PondPilot.config = {
-  selector: 'pre.pondpilot-snippet',  // CSS selector
+  selector: 'pre.pondpilot-snippet, .pondpilot-snippet pre',  // CSS selector
   baseUrl: 'http://localhost:5173',    // Base URL
   theme: 'light',                      // Default theme
-  autoInit: true                       // Auto-initialize on load
+  autoInit: true,                      // Auto-initialize on load
+  duckdbVersion: '1.29.1-dev68.0',     // DuckDB WASM version
+  duckdbCDN: 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm'  // CDN URL
 };
 ```
 
@@ -83,6 +95,22 @@ Reset the SQL to its original state:
 
 ```javascript
 widget.reset();
+```
+
+### `widget.destroy()`
+
+Clean up the widget and release resources:
+
+```javascript
+widget.destroy();
+```
+
+### `widget.cleanup()`
+
+Async cleanup of DuckDB connections:
+
+```javascript
+await widget.cleanup();
 ```
 
 ## CSS Classes
