@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.1] - 2025-05-27
+
+### Fixed
+- **Updated default baseUrl** to use https://app.pondpilot.io
+
 ## [1.0.0] - 2025-05-27
 
 ### Security Fixes

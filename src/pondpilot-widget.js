@@ -1,5 +1,5 @@
 /**
- * PondPilot Widget - Minimal version
+ * PondPilot Widget v1.0.1
  * Transform static SQL code blocks into interactive snippets
  */
 
@@ -9,17 +9,118 @@
   // Inline sql-highlight library (minified) v4.2.0
   // Source: https://github.com/scriptcoded/sql-highlight (MIT License)
   // Note: This is an inlined version for zero-dependency distribution
-  const sqlHighlight = (function() {
-    const keywords = ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'EXISTS', 'BETWEEN', 'LIKE', 'IS', 'NULL', 
-      'ORDER', 'BY', 'GROUP', 'HAVING', 'UNION', 'ALL', 'LIMIT', 'OFFSET', 'FETCH', 'FIRST', 'NEXT', 'ONLY', 'ROWS',
-      'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'CREATE', 'ALTER', 'DROP', 'TABLE', 'INDEX', 'VIEW',
-      'TRIGGER', 'FUNCTION', 'PROCEDURE', 'DATABASE', 'SCHEMA', 'PRIMARY', 'KEY', 'FOREIGN', 'REFERENCES', 'UNIQUE',
-      'CHECK', 'DEFAULT', 'CONSTRAINT', 'CASCADE', 'RESTRICT', 'IF', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END',
-      'JOIN', 'INNER', 'LEFT', 'RIGHT', 'FULL', 'OUTER', 'CROSS', 'ON', 'AS', 'DISTINCT', 'WITH', 'RECURSIVE',
-      'CAST', 'CONVERT', 'COALESCE', 'NULLIF', 'GREATEST', 'LEAST', 'COUNT', 'SUM', 'AVG', 'MIN', 'MAX',
-      'ROUND', 'FLOOR', 'CEIL', 'ABS', 'SIGN', 'MOD', 'SQRT', 'POWER', 'EXP', 'LOG', 'LN', 'CONCAT', 'LENGTH',
-      'SUBSTRING', 'REPLACE', 'TRIM', 'UPPER', 'LOWER', 'CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_TIMESTAMP',
-      'EXTRACT', 'DATE_ADD', 'DATE_SUB', 'DATEDIFF', 'NOW', 'CURDATE', 'CURTIME'];
+  const sqlHighlight = (function () {
+    const keywords = [
+      "SELECT",
+      "FROM",
+      "WHERE",
+      "AND",
+      "OR",
+      "NOT",
+      "IN",
+      "EXISTS",
+      "BETWEEN",
+      "LIKE",
+      "IS",
+      "NULL",
+      "ORDER",
+      "BY",
+      "GROUP",
+      "HAVING",
+      "UNION",
+      "ALL",
+      "LIMIT",
+      "OFFSET",
+      "FETCH",
+      "FIRST",
+      "NEXT",
+      "ONLY",
+      "ROWS",
+      "INSERT",
+      "INTO",
+      "VALUES",
+      "UPDATE",
+      "SET",
+      "DELETE",
+      "CREATE",
+      "ALTER",
+      "DROP",
+      "TABLE",
+      "INDEX",
+      "VIEW",
+      "TRIGGER",
+      "FUNCTION",
+      "PROCEDURE",
+      "DATABASE",
+      "SCHEMA",
+      "PRIMARY",
+      "KEY",
+      "FOREIGN",
+      "REFERENCES",
+      "UNIQUE",
+      "CHECK",
+      "DEFAULT",
+      "CONSTRAINT",
+      "CASCADE",
+      "RESTRICT",
+      "IF",
+      "CASE",
+      "WHEN",
+      "THEN",
+      "ELSE",
+      "END",
+      "JOIN",
+      "INNER",
+      "LEFT",
+      "RIGHT",
+      "FULL",
+      "OUTER",
+      "CROSS",
+      "ON",
+      "AS",
+      "DISTINCT",
+      "WITH",
+      "RECURSIVE",
+      "CAST",
+      "CONVERT",
+      "COALESCE",
+      "NULLIF",
+      "GREATEST",
+      "LEAST",
+      "COUNT",
+      "SUM",
+      "AVG",
+      "MIN",
+      "MAX",
+      "ROUND",
+      "FLOOR",
+      "CEIL",
+      "ABS",
+      "SIGN",
+      "MOD",
+      "SQRT",
+      "POWER",
+      "EXP",
+      "LOG",
+      "LN",
+      "CONCAT",
+      "LENGTH",
+      "SUBSTRING",
+      "REPLACE",
+      "TRIM",
+      "UPPER",
+      "LOWER",
+      "CURRENT_DATE",
+      "CURRENT_TIME",
+      "CURRENT_TIMESTAMP",
+      "EXTRACT",
+      "DATE_ADD",
+      "DATE_SUB",
+      "DATEDIFF",
+      "NOW",
+      "CURDATE",
+      "CURTIME",
+    ];
 
     function getSegments(sqlString) {
       const segments = [];
@@ -31,26 +132,26 @@
         if (/\s/.test(sqlString[i])) {
           let j = i;
           while (j < len && /\s/.test(sqlString[j])) j++;
-          segments.push({ name: 'whitespace', content: sqlString.slice(i, j) });
+          segments.push({ name: "whitespace", content: sqlString.slice(i, j) });
           i = j;
           continue;
         }
 
         // Comments
-        if (sqlString[i] === '-' && sqlString[i + 1] === '-') {
+        if (sqlString[i] === "-" && sqlString[i + 1] === "-") {
           let j = i + 2;
-          while (j < len && sqlString[j] !== '\n') j++;
-          segments.push({ name: 'comment', content: sqlString.slice(i, j) });
+          while (j < len && sqlString[j] !== "\n") j++;
+          segments.push({ name: "comment", content: sqlString.slice(i, j) });
           i = j;
           continue;
         }
-        
+
         // Multi-line comments
-        if (sqlString[i] === '/' && sqlString[i + 1] === '*') {
+        if (sqlString[i] === "/" && sqlString[i + 1] === "*") {
           let j = i + 2;
-          while (j < len - 1 && !(sqlString[j] === '*' && sqlString[j + 1] === '/')) j++;
+          while (j < len - 1 && !(sqlString[j] === "*" && sqlString[j + 1] === "/")) j++;
           if (j < len - 1) j += 2;
-          segments.push({ name: 'comment', content: sqlString.slice(i, j) });
+          segments.push({ name: "comment", content: sqlString.slice(i, j) });
           i = j;
           continue;
         }
@@ -60,11 +161,11 @@
           const quote = sqlString[i];
           let j = i + 1;
           while (j < len && sqlString[j] !== quote) {
-            if (sqlString[j] === '\\') j++;
+            if (sqlString[j] === "\\") j++;
             j++;
           }
           if (j < len) j++;
-          segments.push({ name: 'string', content: sqlString.slice(i, j) });
+          segments.push({ name: "string", content: sqlString.slice(i, j) });
           i = j;
           continue;
         }
@@ -73,7 +174,7 @@
         if (/\d/.test(sqlString[i])) {
           let j = i;
           while (j < len && /[\d.]/.test(sqlString[j])) j++;
-          segments.push({ name: 'number', content: sqlString.slice(i, j) });
+          segments.push({ name: "number", content: sqlString.slice(i, j) });
           i = j;
           continue;
         }
@@ -85,9 +186,9 @@
           const word = sqlString.slice(i, j);
           const upperWord = word.toUpperCase();
           if (keywords.includes(upperWord)) {
-            segments.push({ name: 'keyword', content: word });
+            segments.push({ name: "keyword", content: word });
           } else {
-            segments.push({ name: 'identifier', content: word });
+            segments.push({ name: "identifier", content: word });
           }
           i = j;
           continue;
@@ -95,23 +196,23 @@
 
         // Special characters
         if (/[(),.;=<>!+\-*/]/.test(sqlString[i])) {
-          segments.push({ name: 'special', content: sqlString[i] });
+          segments.push({ name: "special", content: sqlString[i] });
           i++;
           continue;
         }
 
         // Backticks (MySQL style identifiers)
-        if (sqlString[i] === '`') {
+        if (sqlString[i] === "`") {
           let j = i + 1;
-          while (j < len && sqlString[j] !== '`') j++;
+          while (j < len && sqlString[j] !== "`") j++;
           if (j < len) j++;
-          segments.push({ name: 'identifier', content: sqlString.slice(i, j) });
+          segments.push({ name: "identifier", content: sqlString.slice(i, j) });
           i = j;
           continue;
         }
 
         // Default
-        segments.push({ name: 'other', content: sqlString[i] });
+        segments.push({ name: "other", content: sqlString[i] });
         i++;
       }
 
@@ -120,20 +221,17 @@
 
     function highlight(sqlString, options = {}) {
       const segments = getSegments(sqlString);
-      
+
       if (options.html) {
-        return segments.map(segment => {
-          const className = 'sql-hl-' + segment.name;
-          const escaped = segment.content
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-          return segment.name === 'whitespace' 
-            ? escaped 
-            : `<span class="${className}">${escaped}</span>`;
-        }).join('');
+        return segments
+          .map((segment) => {
+            const className = "sql-hl-" + segment.name;
+            const escaped = segment.content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return segment.name === "whitespace" ? escaped : `<span class="${className}">${escaped}</span>`;
+          })
+          .join("");
       }
-      
+
       return sqlString; // Plain text for now
     }
 
@@ -153,20 +251,18 @@
       INITIALIZING_DB: 60,
       LOADING_MODULE: 80,
       CREATING_CONNECTION: 90,
-      COMPLETE: 100
-    }
+      COMPLETE: 100,
+    },
   };
 
   // Widget configuration
   const config = {
     selector: "pre.pondpilot-snippet, .pondpilot-snippet pre",
-    baseUrl: window.PONDPILOT_BASE_URL || "http://localhost:5173",
+    baseUrl: window.PONDPILOT_BASE_URL || "https://app.pondpilot.io",
     theme: "light",
     autoInit: true,
-    // DuckDB CDN settings - update version and add integrity hashes for security
     duckdbVersion: "1.29.1-dev68.0",
     duckdbCDN: "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm",
-    // Optional: Add integrity hashes when available from DuckDB releases
     // duckdbIntegrity: { main: "sha384-...", worker: "sha384-..." }
   };
 
@@ -519,15 +615,9 @@
     }
   `;
 
-
   // Utility functions
   function escapeHtml(unsafe) {
-    return unsafe
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+    return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
   }
 
   function debounce(func, wait) {
@@ -582,7 +672,7 @@
       if (this.options.showPoweredBy !== false) {
         this.poweredBy = this.createPoweredBy();
         this.widget.appendChild(this.poweredBy);
-        
+
         // Add duck watermark only when branding is shown
         this.duck = this.createDuckLogo();
         this.widget.appendChild(this.duck);
@@ -599,7 +689,7 @@
       const button = document.createElement("button");
       button.className = "pondpilot-run-button";
       button.textContent = "Run";
-      button.setAttribute('aria-label', 'Run SQL query');
+      button.setAttribute("aria-label", "Run SQL query");
       button.onclick = () => this.run();
       return button;
     }
@@ -608,7 +698,7 @@
       const button = document.createElement("button");
       button.className = "pondpilot-reset-button";
       button.textContent = "Reset";
-      button.setAttribute('aria-label', 'Reset to original SQL');
+      button.setAttribute("aria-label", "Reset to original SQL");
       button.onclick = () => this.reset();
       return button;
     }
@@ -623,14 +713,14 @@
     setCursorOffset(element, offset) {
       const textNodes = this.getTextNodes(element);
       let currentOffset = 0;
-      
+
       for (const node of textNodes) {
         const nodeLength = node.textContent.length;
         if (currentOffset + nodeLength >= offset) {
           const range = document.createRange();
           range.setStart(node, offset - currentOffset);
           range.collapse(true);
-          
+
           const selection = window.getSelection();
           selection.removeAllRanges();
           selection.addRange(range);
@@ -642,15 +732,10 @@
 
     getTextNodes(element) {
       const textNodes = [];
-      const walker = document.createTreeWalker(
-        element,
-        NodeFilter.SHOW_TEXT,
-        null,
-        false
-      );
-      
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+
       let node;
-      while (node = walker.nextNode()) {
+      while ((node = walker.nextNode())) {
         textNodes.push(node);
       }
       return textNodes;
@@ -663,7 +748,7 @@
       const pre = document.createElement("pre");
       pre.innerHTML = sqlHighlight.highlight(this.originalCode, { html: true });
       editor.appendChild(pre);
-      
+
       // Initialize current code
       this.currentCode = this.originalCode;
 
@@ -671,18 +756,18 @@
       if (this.options.editable !== false) {
         pre.contentEditable = true;
         pre.spellcheck = false;
-        pre.setAttribute('role', 'textbox');
-        pre.setAttribute('aria-label', 'SQL editor');
-        pre.setAttribute('aria-multiline', 'true');
-        
+        pre.setAttribute("role", "textbox");
+        pre.setAttribute("aria-label", "SQL editor");
+        pre.setAttribute("aria-multiline", "true");
+
         // Create debounced highlight function
         const highlightDebounced = debounce((text, cursorOffset) => {
           // Re-highlight
           pre.innerHTML = sqlHighlight.highlight(text, { html: true });
-          
+
           // Restore cursor position
           this.setCursorOffset(pre, cursorOffset);
-          
+
           // Update reset button visibility
           if (text !== this.originalCode) {
             this.resetButton.classList.add("show");
@@ -690,23 +775,23 @@
             this.resetButton.classList.remove("show");
           }
         }, CONSTANTS.DEBOUNCE_DELAY); // Debounce for smooth typing
-        
+
         // Track changes and re-highlight
         pre.addEventListener("input", () => {
           const text = pre.textContent;
           this.currentCode = text;
-          
+
           // Preserve cursor position
           const selection = window.getSelection();
           const range = selection.getRangeAt(0);
           const cursorOffset = this.getCursorOffset(pre, range);
-          
+
           // For small text, highlight immediately, for large text debounce
           if (text.length < CONSTANTS.LARGE_SQL_THRESHOLD) {
             // Re-highlight immediately for small SQL
             pre.innerHTML = sqlHighlight.highlight(text, { html: true });
             this.setCursorOffset(pre, cursorOffset);
-            
+
             // Update reset button visibility
             if (text !== this.originalCode) {
               this.resetButton.classList.add("show");
@@ -745,43 +830,43 @@
     createPoweredBy() {
       const powered = document.createElement("div");
       powered.className = "pondpilot-powered";
-      
+
       // Create link element programmatically to prevent XSS
       const link = document.createElement("a");
       // Sanitize baseUrl - only allow http/https URLs
       let safeBaseUrl = this.options.baseUrl;
       try {
         const url = new URL(safeBaseUrl);
-        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
           safeBaseUrl = config.baseUrl; // Fall back to default
         }
       } catch (e) {
         safeBaseUrl = config.baseUrl; // Fall back to default if invalid URL
       }
-      
+
       link.href = safeBaseUrl;
       link.target = "_blank";
       link.rel = "noopener";
       link.textContent = "PondPilot";
-      
+
       powered.appendChild(link);
       return powered;
     }
 
     createDuckLogo() {
       const duck = document.createElement("a");
-      
+
       // Reuse the same URL sanitization logic
       let safeBaseUrl = this.options.baseUrl;
       try {
         const url = new URL(safeBaseUrl);
-        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
           safeBaseUrl = config.baseUrl;
         }
       } catch (e) {
         safeBaseUrl = config.baseUrl;
       }
-      
+
       duck.href = safeBaseUrl;
       duck.target = "_blank";
       duck.rel = "noopener";
@@ -802,7 +887,7 @@
       try {
         this.runButton.textContent = "Loading...";
         this.runButton.disabled = true;
-        this.widget.setAttribute('aria-busy', 'true');
+        this.widget.setAttribute("aria-busy", "true");
 
         // Show loading progress
         this.showProgress("Initializing DuckDB...", 0);
@@ -826,12 +911,12 @@
 
         // Hide progress
         this.output.classList.remove("show");
-        this.widget.setAttribute('aria-busy', 'false');
+        this.widget.setAttribute("aria-busy", "false");
       } catch (error) {
         console.error("Failed to initialize DuckDB:", error);
         this.runButton.textContent = "Error";
         this.showError("Failed to initialize DuckDB: " + error.message);
-        this.widget.setAttribute('aria-busy', 'false');
+        this.widget.setAttribute("aria-busy", "false");
       }
     }
 
@@ -880,7 +965,9 @@
             const worker_url = URL.createObjectURL(new Blob([`importScripts("${bundle.mainWorker}");`], { type: "text/javascript" }));
             worker = new Worker(worker_url);
           } catch (blobError) {
-            throw new Error("Failed to create worker. This may be due to Content Security Policy restrictions. Please ensure your site allows worker-src 'self' blob: or use a CSP-compatible hosting setup.");
+            throw new Error(
+              "Failed to create worker. This may be due to Content Security Policy restrictions. Please ensure your site allows worker-src 'self' blob: or use a CSP-compatible hosting setup.",
+            );
           }
         }
         const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
@@ -899,7 +986,7 @@
     }
 
     async run() {
-      const code = this.currentCode || this.editor.querySelector('pre').textContent.trim();
+      const code = this.currentCode || this.editor.querySelector("pre").textContent.trim();
       if (!code) return;
 
       // Initialize DuckDB on first run
@@ -913,7 +1000,7 @@
       this.runButton.disabled = true;
       this.runButton.textContent = "Running...";
       this.output.classList.add("show");
-      this.widget.setAttribute('aria-busy', 'true');
+      this.widget.setAttribute("aria-busy", "true");
 
       const outputContent = this.output.querySelector(".pondpilot-output-content");
       outputContent.innerHTML = '<div class="pondpilot-loading">Running query...</div>';
@@ -933,7 +1020,7 @@
         this.runButton.textContent = "Run";
       } finally {
         this.runButton.disabled = false;
-        this.widget.setAttribute('aria-busy', 'false');
+        this.widget.setAttribute("aria-busy", "false");
       }
     }
 
@@ -1048,10 +1135,10 @@
     destroy() {
       // Call async cleanup
       this.cleanup().catch(console.error);
-      
+
       // Remove from instances
       widgetInstances.delete(this.widget);
-      
+
       // Clear references
       this.widget = null;
       this.editor = null;
@@ -1098,10 +1185,8 @@
       mutation.removedNodes.forEach((node) => {
         // Check if the removed node or its descendants contain widgets
         if (node.nodeType === Node.ELEMENT_NODE) {
-          const widgets = node.classList?.contains('pondpilot-widget') 
-            ? [node] 
-            : node.querySelectorAll?.('.pondpilot-widget') || [];
-          
+          const widgets = node.classList?.contains("pondpilot-widget") ? [node] : node.querySelectorAll?.(".pondpilot-widget") || [];
+
           widgets.forEach((widgetElement) => {
             const widget = widgetInstances.get(widgetElement);
             if (widget) {
@@ -1117,7 +1202,7 @@
   if (document.body) {
     observer.observe(document.body, { childList: true, subtree: true });
   } else {
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener("DOMContentLoaded", () => {
       observer.observe(document.body, { childList: true, subtree: true });
     });
   }
@@ -1129,7 +1214,7 @@
     config,
     destroy: () => {
       // Clean up all widgets
-      document.querySelectorAll('.pondpilot-widget').forEach((element) => {
+      document.querySelectorAll(".pondpilot-widget").forEach((element) => {
         const widget = widgetInstances.get(element);
         if (widget) {
           widget.destroy();
@@ -1137,6 +1222,6 @@
       });
       // Stop observing
       observer.disconnect();
-    }
+    },
   };
 })();
