@@ -243,6 +243,7 @@
     DEBOUNCE_DELAY: 150, // ms
     LARGE_SQL_THRESHOLD: 500, // characters
     MAX_OUTPUT_HEIGHT: 300, // px
+    MIN_LOADING_DURATION: 200, // ms - minimum time to show loading state
     PROGRESS_STEPS: {
       MODULE_LOADING: 10,
       FETCHING_BUNDLES: 20,
@@ -1043,17 +1044,36 @@
       const outputContent = this.output.querySelector(".pondpilot-output-content");
       outputContent.innerHTML = '<div class="pondpilot-loading">Running query...</div>';
 
+      // Track loading start time for minimum duration
+      const loadingStartTime = performance.now();
+
       try {
-        const startTime = performance.now();
+        const queryStartTime = performance.now();
         const result = await this.conn.query(code);
-        const elapsed = Math.round(performance.now() - startTime);
+        const elapsed = Math.round(performance.now() - queryStartTime);
 
         const table = result.toArray();
         const data = table.map((row) => row.toJSON());
 
+        // Ensure minimum loading duration for smooth UX
+        const loadingElapsed = performance.now() - loadingStartTime;
+        const remainingTime = Math.max(0, CONSTANTS.MIN_LOADING_DURATION - loadingElapsed);
+        
+        if (remainingTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+
         this.displayResults(data, elapsed);
         this.runButton.textContent = "Run";
       } catch (error) {
+        // Ensure minimum loading duration even for errors
+        const loadingElapsed = performance.now() - loadingStartTime;
+        const remainingTime = Math.max(0, CONSTANTS.MIN_LOADING_DURATION - loadingElapsed);
+        
+        if (remainingTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+
         this.showError(error.message);
         this.runButton.textContent = "Run";
       } finally {
