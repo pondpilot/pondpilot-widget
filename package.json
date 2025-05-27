@@ -1,6 +1,6 @@
 {
   "name": "pondpilot-widget",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Transform static SQL code blocks into interactive snippets powered by DuckDB WASM",
   "main": "dist/pondpilot-widget.min.js",
   "browser": "dist/pondpilot-widget.min.js",

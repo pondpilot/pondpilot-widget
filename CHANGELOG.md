@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2] - 2025-05-27
+
+### Enhanced
+- **Improved button layout** - Responsive button container prevents overlapping with long text on small screens
+- **Smoother animations** - Added minimum loading duration (200ms) to prevent glitchy flashes on fast queries
+- **Updated documentation** - Prioritized CDN integration in README and added link to interactive examples
+
 ## [1.0.1] - 2025-05-27
 
 ### Fixed

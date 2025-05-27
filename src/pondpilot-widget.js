@@ -1,5 +1,5 @@
 /**
- * PondPilot Widget v1.0.1
+ * PondPilot Widget v1.0.2
  * Transform static SQL code blocks into interactive snippets
  */
 
