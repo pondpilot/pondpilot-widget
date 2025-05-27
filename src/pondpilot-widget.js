@@ -6,8 +6,9 @@
 (function () {
   "use strict";
 
-  // Inline sql-highlight library (minified)
+  // Inline sql-highlight library (minified) v4.2.0
   // Source: https://github.com/scriptcoded/sql-highlight (MIT License)
+  // Note: This is an inlined version for zero-dependency distribution
   const sqlHighlight = (function() {
     const keywords = ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'EXISTS', 'BETWEEN', 'LIKE', 'IS', 'NULL', 
       'ORDER', 'BY', 'GROUP', 'HAVING', 'UNION', 'ALL', 'LIMIT', 'OFFSET', 'FETCH', 'FIRST', 'NEXT', 'ONLY', 'ROWS',
@@ -289,7 +290,7 @@
     .pondpilot-output {
       background: rgba(0, 0, 0, 0.02);
       border-top: 1px solid rgba(0, 0, 0, 0.06);
-      max-height: ` + CONSTANTS.MAX_OUTPUT_HEIGHT + `px;
+      max-height: ${CONSTANTS.MAX_OUTPUT_HEIGHT}px;
       overflow: auto;
       display: none;
       font-size: 12px;
@@ -744,13 +745,44 @@
     createPoweredBy() {
       const powered = document.createElement("div");
       powered.className = "pondpilot-powered";
-      powered.innerHTML = `<a href="${this.options.baseUrl}" target="_blank" rel="noopener">PondPilot</a>`;
+      
+      // Create link element programmatically to prevent XSS
+      const link = document.createElement("a");
+      // Sanitize baseUrl - only allow http/https URLs
+      let safeBaseUrl = this.options.baseUrl;
+      try {
+        const url = new URL(safeBaseUrl);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          safeBaseUrl = config.baseUrl; // Fall back to default
+        }
+      } catch (e) {
+        safeBaseUrl = config.baseUrl; // Fall back to default if invalid URL
+      }
+      
+      link.href = safeBaseUrl;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = "PondPilot";
+      
+      powered.appendChild(link);
       return powered;
     }
 
     createDuckLogo() {
       const duck = document.createElement("a");
-      duck.href = this.options.baseUrl;
+      
+      // Reuse the same URL sanitization logic
+      let safeBaseUrl = this.options.baseUrl;
+      try {
+        const url = new URL(safeBaseUrl);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          safeBaseUrl = config.baseUrl;
+        }
+      } catch (e) {
+        safeBaseUrl = config.baseUrl;
+      }
+      
+      duck.href = safeBaseUrl;
       duck.target = "_blank";
       duck.rel = "noopener";
       duck.className = "pondpilot-duck";
@@ -770,6 +802,7 @@
       try {
         this.runButton.textContent = "Loading...";
         this.runButton.disabled = true;
+        this.widget.setAttribute('aria-busy', 'true');
 
         // Show loading progress
         this.showProgress("Initializing DuckDB...", 0);
@@ -793,10 +826,12 @@
 
         // Hide progress
         this.output.classList.remove("show");
+        this.widget.setAttribute('aria-busy', 'false');
       } catch (error) {
         console.error("Failed to initialize DuckDB:", error);
         this.runButton.textContent = "Error";
         this.showError("Failed to initialize DuckDB: " + error.message);
+        this.widget.setAttribute('aria-busy', 'false');
       }
     }
 
@@ -878,6 +913,7 @@
       this.runButton.disabled = true;
       this.runButton.textContent = "Running...";
       this.output.classList.add("show");
+      this.widget.setAttribute('aria-busy', 'true');
 
       const outputContent = this.output.querySelector(".pondpilot-output-content");
       outputContent.innerHTML = '<div class="pondpilot-loading">Running query...</div>';
@@ -897,6 +933,7 @@
         this.runButton.textContent = "Run";
       } finally {
         this.runButton.disabled = false;
+        this.widget.setAttribute('aria-busy', 'false');
       }
     }
 
