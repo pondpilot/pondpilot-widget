@@ -7,6 +7,8 @@
 
 Transform static SQL code blocks into interactive snippets powered by DuckDB WASM.
 
+🎮 **[Try it live](https://widget.pondpilot.io)** - Interactive examples and demos
+
 ## Features
 
 - 🦆 **DuckDB in the Browser** - Full SQL analytics engine running locally
@@ -21,40 +23,39 @@ Transform static SQL code blocks into interactive snippets powered by DuckDB WAS
 
 ## Installation
 
-### NPM
-```bash
-npm install pondpilot-widget
-```
+### CDN (Recommended)
+The easiest way to get started is via CDN:
 
-### Yarn
-```bash
-yarn add pondpilot-widget
-```
-
-### CDN
 ```html
 <!-- Latest version -->
 <script src="https://unpkg.com/pondpilot-widget"></script>
 
-<!-- Specific version -->
-<script src="https://unpkg.com/pondpilot-widget@1.0.0"></script>
+<!-- Specific version (recommended for production) -->
+<script src="https://unpkg.com/pondpilot-widget@1.0.1"></script>
 
 <!-- Alternative CDN -->
 <script src="https://cdn.jsdelivr.net/npm/pondpilot-widget"></script>
 ```
 
+### Package Manager
+For projects using a bundler:
+
+#### NPM
+```bash
+npm install pondpilot-widget
+```
+
+#### Yarn
+```bash
+yarn add pondpilot-widget
+```
+
 ## Quick Start
 
-### 1. Add the Widget
+### 1. Add the Script Tag
 
 ```html
-<!-- Via CDN -->
 <script src="https://unpkg.com/pondpilot-widget"></script>
-
-<!-- Or via NPM/bundler -->
-<script type="module">
-  import 'pondpilot-widget';
-</script>
 ```
 
 ### 2. Mark Your SQL Code Blocks
@@ -71,6 +72,15 @@ SELECT
 ### 3. That's It!
 
 The widget automatically transforms your static code blocks into interactive SQL editors.
+
+### Alternative: Using a Bundler
+
+If you're using a bundler like Webpack, Vite, or Parcel:
+
+```javascript
+// Import in your main JS file
+import 'pondpilot-widget';
+```
 
 ## Usage Examples
 
