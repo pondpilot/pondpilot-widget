@@ -20,6 +20,7 @@ Transform static SQL code blocks into interactive snippets powered by DuckDB WAS
 - 🎯 **Lightweight** - Only ~22KB minified, loads DuckDB on-demand
 - 🌙 **Dark Mode** - Automatic theme detection or manual control
 - 🔒 **Secure** - No data leaves the browser, CSP-compatible
+- 📁 **Relative Paths** - Automatic resolution of relative parquet file paths
 
 ## Installation
 
@@ -31,7 +32,7 @@ The easiest way to get started is via CDN:
 <script src="https://unpkg.com/pondpilot-widget"></script>
 
 <!-- Specific version (recommended for production) -->
-<script src="https://unpkg.com/pondpilot-widget@1.0.1"></script>
+<script src="https://unpkg.com/pondpilot-widget@1.1.0"></script>
 
 <!-- Alternative CDN -->
 <script src="https://cdn.jsdelivr.net/npm/pondpilot-widget"></script>
@@ -210,7 +211,7 @@ widget.destroy();        // Destroy widget
 2. **Subresource Integrity (SRI)**
    ```html
    <script
-     src="https://unpkg.com/pondpilot-widget@1.0.0"
+     src="https://unpkg.com/pondpilot-widget@1.1.0"
      integrity="sha384-[hash]"
      crossorigin="anonymous">
    </script>
@@ -227,11 +228,36 @@ Requires:
 - Web Workers
 - ES2018+
 
+## Working with Parquet Files
+
+The widget supports loading parquet files from various sources:
+
+### Direct HTTP URLs
+```sql
+SELECT * FROM 'https://example.com/data.parquet' LIMIT 10;
+```
+
+### Relative Paths (New in v1.1.0)
+The widget automatically resolves relative paths to absolute URLs:
+
+```sql
+-- All of these formats are supported:
+SELECT * FROM 'data.parquet';
+SELECT * FROM './data.parquet';
+SELECT * FROM '/data.parquet';
+```
+
+When using relative paths:
+- Files must be accessible via HTTP from the same server
+- The widget resolves paths relative to the current page URL
+- For local development, ensure your files are served by a web server
+
 ## Performance Tips
 
 1. **Lazy Loading**: DuckDB is only loaded when first query runs
 2. **Shared Instance**: Multiple widgets share the same DuckDB instance
 3. **Resource Cleanup**: Widgets automatically clean up when removed from DOM
+4. **File Caching**: Registered parquet files are cached to avoid duplicate downloads
 
 ## Changelog
 

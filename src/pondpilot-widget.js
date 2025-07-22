@@ -1,5 +1,5 @@
 /**
- * PondPilot Widget v1.0.2
+ * PondPilot Widget v1.1.0
  * Transform static SQL code blocks into interactive snippets
  */
 
@@ -270,6 +270,7 @@
   // Shared DuckDB instance
   let sharedDuckDB = null;
   let duckDBInitPromise = null;
+  let duckDBModule = null;
 
   // Minimal widget styles
   const styles = `
@@ -922,6 +923,87 @@
       return duck;
     }
 
+    async processRelativeParquetPaths(sql) {
+      // Regular expression to match file paths in FROM clauses
+      // Matches: FROM 'path.parquet', FROM "path.parquet", or FROM path.parquet
+      const fromPattern = /FROM\s+['"]?([^'";\s]+\.parquet)['"]?/gi;
+      
+      // Keep track of registered files to avoid duplicate registrations
+      if (!this.registeredFiles) {
+        this.registeredFiles = new Set();
+      }
+      
+      let processedSql = sql;
+      const matches = [...sql.matchAll(fromPattern)];
+      
+      for (const match of matches) {
+        const filePath = match[1];
+        
+        // Check if it's already an HTTP URL
+        if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+          continue;
+        }
+        
+        // Check if this is a relative path (not already registered)
+        if (!this.registeredFiles.has(filePath)) {
+          // Resolve the relative path to an absolute URL
+          const absoluteUrl = this.resolveRelativePath(filePath);
+          
+          try {
+            // Register the file with DuckDB
+            await sharedDuckDB.registerFileURL(
+              filePath,
+              absoluteUrl,
+              duckDBModule.DuckDBDataProtocol.HTTP,
+              false
+            );
+            this.registeredFiles.add(filePath);
+          } catch (error) {
+            console.error(`Failed to register file ${filePath}:`, error);
+            // Continue with other files even if one fails
+          }
+        }
+      }
+      
+      return processedSql;
+    }
+
+    resolveRelativePath(relativePath) {
+      // Get the current page URL
+      const currentUrl = window.location.href;
+      
+      // Create a URL object to properly resolve the relative path
+      try {
+        // If the current page is a file:// URL, we need to handle it differently
+        if (currentUrl.startsWith('file://')) {
+          // For file:// URLs, we'll assume the parquet file is served via HTTP on the same host
+          // This is a common setup for local development
+          const host = window.location.hostname || 'localhost';
+          const port = window.location.port || '8080';
+          const baseUrl = `http://${host}:${port}/`;
+          return new URL(relativePath, baseUrl).href;
+        } else {
+          // For HTTP(S) URLs, resolve relative to the current page
+          return new URL(relativePath, currentUrl).href;
+        }
+      } catch (error) {
+        // If URL construction fails, try a simpler approach
+        // Remove leading slashes for consistency
+        const cleanPath = relativePath.replace(/^\/+/, '');
+        
+        // If we're on localhost, assume files are served from the same server
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          const protocol = window.location.protocol === 'file:' ? 'http:' : window.location.protocol;
+          const port = window.location.port || '8080';
+          return `${protocol}//${window.location.hostname}:${port}/${cleanPath}`;
+        }
+        
+        // For other hosts, resolve relative to the current directory
+        const basePath = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+        return basePath + cleanPath;
+      }
+    }
+
     async initDuckDB() {
       try {
         this.runButton.textContent = "Loading...";
@@ -981,8 +1063,8 @@
         // Dynamically import DuckDB WASM
         this.progressCallback(CONSTANTS.PROGRESS_STEPS.MODULE_LOADING, "Loading DuckDB module...");
         const duckdbUrl = `${config.duckdbCDN}@${config.duckdbVersion}/+esm`;
-        const duckdbModule = await import(duckdbUrl);
-        const duckdb = duckdbModule;
+        duckDBModule = await import(duckdbUrl);
+        const duckdb = duckDBModule;
 
         // Get the bundles from jsDelivr
         this.progressCallback(CONSTANTS.PROGRESS_STEPS.FETCHING_BUNDLES, "Fetching bundles...");
@@ -1048,8 +1130,11 @@
       const loadingStartTime = performance.now();
 
       try {
+        // Process the SQL to handle relative parquet paths
+        const processedCode = await this.processRelativeParquetPaths(code);
+        
         const queryStartTime = performance.now();
-        const result = await this.conn.query(code);
+        const result = await this.conn.query(processedCode);
         const elapsed = Math.round(performance.now() - queryStartTime);
 
         const table = result.toArray();
@@ -1164,6 +1249,12 @@
       } else if (message.includes("Out of Memory")) {
         improvedMessage = "Memory limit exceeded";
         suggestion = "Tip: Try using LIMIT to reduce result size, or process data in smaller chunks.";
+      } else if (message.includes("No files found that match the pattern")) {
+        improvedMessage = "File not found";
+        suggestion = "Tip: For relative paths, ensure the file is accessible via HTTP from the same server. Try using a full URL like 'http://localhost:8080/file.parquet'.";
+      } else if (message.includes("HTTP") && message.includes("404")) {
+        improvedMessage = "File not found (404)";
+        suggestion = "Tip: The file could not be loaded from the resolved URL. Check that the file exists and is served by your web server.";
       }
 
       outputContent.innerHTML = `

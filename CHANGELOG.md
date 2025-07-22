@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.0] - 2025-07-22
+
+### Added
+- **Relative path support for parquet files** - Automatically resolves relative paths to absolute URLs (#2)
+  - Supports various formats: `'data.parquet'`, `'./data.parquet'`, `'/data.parquet'`
+  - Intelligently handles local development and production environments
+  - Caches registered files to avoid duplicate downloads
+- **Enhanced error messages** for file loading failures with helpful tips
+
+### Technical Details
+- Added `processRelativeParquetPaths()` method to detect and register parquet files
+- Added `resolveRelativePath()` method for intelligent URL resolution
+- Stores DuckDB module reference for accessing `DuckDBDataProtocol` enum
+- Tracks registered files to prevent duplicate registrations
+
 ## [1.0.2] - 2025-05-27
 
 ### Enhanced
