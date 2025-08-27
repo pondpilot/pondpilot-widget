@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.1] - 2025-08-27
+
+### Fixed
+- **Firefox compatibility** - Fixed cross-origin worker loading issue that prevented the widget from working in Firefox
+  - Implemented fetch-and-blob approach for loading DuckDB workers from CDN
+  - Added proper fallback mechanism for browsers with different CORS policies
+  - Workers are now loaded via blob URLs to bypass cross-origin restrictions
+
+### Technical Details
+- Modified `createSharedDuckDB()` to fetch worker scripts and create blob URLs
+- Added cleanup of blob URLs after worker initialization
+- Maintained backward compatibility with Chrome and other browsers
+- Improved error messages for worker loading failures
+
 ## [1.1.0] - 2025-07-22
 
 ### Added

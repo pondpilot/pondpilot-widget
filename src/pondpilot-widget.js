@@ -1,5 +1,5 @@
 /**
- * PondPilot Widget v1.1.0
+ * PondPilot Widget v1.1.1
  * Transform static SQL code blocks into interactive snippets
  */
 
@@ -1074,21 +1074,41 @@
         this.progressCallback(CONSTANTS.PROGRESS_STEPS.SELECTING_BUNDLE, "Selecting best bundle...");
         const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
 
-        // Create the worker - try direct URL first for CSP compatibility
+        // Create the worker - use blob URL approach for cross-origin compatibility
         this.progressCallback(CONSTANTS.PROGRESS_STEPS.CREATING_WORKER, "Creating worker...");
         let worker;
+        
         try {
-          // First try direct worker URL (CSP-friendly)
-          worker = new Worker(bundle.mainWorker);
-        } catch (e) {
-          // Fallback to blob URL if direct loading fails
+          // For Firefox and other browsers with strict CORS, we need to fetch and create a blob
+          // This approach works around the cross-origin restrictions
+          const workerResponse = await fetch(bundle.mainWorker);
+          if (!workerResponse.ok) {
+            throw new Error(`Failed to fetch worker: ${workerResponse.statusText}`);
+          }
+          
+          const workerScript = await workerResponse.text();
+          const workerBlob = new Blob([workerScript], { type: 'application/javascript' });
+          const workerUrl = URL.createObjectURL(workerBlob);
+          
+          worker = new Worker(workerUrl);
+          
+          // Clean up the blob URL after worker is created
+          // Note: We don't revoke immediately as the worker needs time to load
+          setTimeout(() => URL.revokeObjectURL(workerUrl), 1000);
+        } catch (fetchError) {
+          // If fetching fails, try the original direct approach as a fallback
           try {
-            const worker_url = URL.createObjectURL(new Blob([`importScripts("${bundle.mainWorker}");`], { type: "text/javascript" }));
-            worker = new Worker(worker_url);
-          } catch (blobError) {
-            throw new Error(
-              "Failed to create worker. This may be due to Content Security Policy restrictions. Please ensure your site allows worker-src 'self' blob: or use a CSP-compatible hosting setup.",
-            );
+            worker = new Worker(bundle.mainWorker);
+          } catch (directError) {
+            // Last resort: try importScripts approach
+            try {
+              const worker_url = URL.createObjectURL(new Blob([`importScripts("${bundle.mainWorker}");`], { type: "text/javascript" }));
+              worker = new Worker(worker_url);
+            } catch (blobError) {
+              throw new Error(
+                `Failed to create worker. Error details: ${fetchError.message}. This may be due to Content Security Policy restrictions or CORS issues. Please ensure your site allows worker-src 'self' blob: and the CDN is accessible.`,
+              );
+            }
           }
         }
         const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
