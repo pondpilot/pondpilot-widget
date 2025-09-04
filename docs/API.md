@@ -63,6 +63,9 @@ const widget = new PondPilot.Widget(element, options);
 - `selector` (String): CSS selector for auto-initialization
 - `duckdbVersion` (String): DuckDB WASM version to use
 - `duckdbCDN` (String): CDN URL for DuckDB WASM
+- `duckdbInstance` (Object/Promise): External DuckDB instance or Promise that resolves to instance
+- `duckdbModule` (Object): DuckDB module reference (optional with external instance)
+- `onDuckDBReady` (Function): Callback when internal DuckDB instance is ready `(db, module) => {}`
 
 ### `PondPilot.config`
 
@@ -179,4 +182,43 @@ PondPilot.config.autoInit = false;
 setTimeout(() => {
   PondPilot.init();
 }, 1000);
+```
+
+### Using External DuckDB Instance
+
+```javascript
+// Example: Pass your DuckDB instance - widget will wait for it to be ready
+// (Replace 'yourInitFunction' with your actual DuckDB initialization)
+const myDB = await yourInitFunction();
+
+new PondPilot.Widget(element, {
+  duckdbInstance: myDB,
+  duckdbModule: duckdbModule // Optional
+});
+
+// Or pass a promise that resolves to the instance
+const dbPromise = yourInitFunction(); // Your async init function
+
+new PondPilot.Widget(element, {
+  duckdbInstance: dbPromise // Widget will await this
+});
+
+// Real example with your Zustand store pattern:
+const { db } = useDuckDBStore.getState();
+new PondPilot.Widget(element, {
+  duckdbInstance: db // Can be null, instance, or promise
+});
+```
+
+### Accessing Internal Instance
+
+```javascript
+// Get notified when internal DuckDB is ready
+new PondPilot.Widget(element, {
+  onDuckDBReady: (db, module) => {
+    console.log('DuckDB instance ready:', db);
+    // Use the instance for other purposes
+    window.sharedDB = db;
+  }
+});
 ```
