@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0] - 2025-09-06
+
+### Added
+- **Support for external DuckDB instances** - Users can now bring their own DuckDB instance (#4)
+  - Allows integration with existing DuckDB connections in the application
+  - Reduces memory footprint when multiple widgets are used
+  - Enables sharing of data and configuration across widgets
+
 ## [1.1.1] - 2025-08-27
 
 ### Fixed
