@@ -667,6 +667,7 @@
       this.element = element;
       this.options = { ...config, ...options };
       this.originalCode = this.extractCode();
+      this.isExternalInstance = false;
       this.init();
     }
 
@@ -1010,29 +1011,61 @@
         this.runButton.disabled = true;
         this.widget.setAttribute("aria-busy", "true");
 
-        // Show loading progress
-        this.showProgress("Initializing DuckDB...", 0);
-
-        // Use shared DuckDB instance if available
-        if (!duckDBInitPromise) {
-          duckDBInitPromise = this.createSharedDuckDB((progress, message) => {
-            this.showProgress(message, progress);
-          });
+        // Get or create DuckDB instance
+        if (this.options.duckdbInstance) {
+          // External instance provided
+          this.isExternalInstance = true;
+          sharedDuckDB = this.options.duckdbInstance;
+          duckDBModule = this.options.duckdbModule || window.duckdb || duckDBModule;
+          
+          this.showProgress("Waiting for DuckDB instance...", 50);
+          
+          // If it's a promise, await it
+          if (sharedDuckDB.then && typeof sharedDuckDB.then === 'function') {
+            sharedDuckDB = await sharedDuckDB;
+            this.options.duckdbInstance = sharedDuckDB;
+          }
+          
+          // Wait for instance to have connect method available
+          let retries = 0;
+          while (!sharedDuckDB.connect && retries < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retries++;
+          }
+          
+          if (!sharedDuckDB.connect) {
+            throw new Error('DuckDB instance not ready after 5 seconds');
+          }
+          
+          this.showProgress("Connecting to DuckDB instance...", 90);
+        } else {
+          // Create internal instance
+          this.showProgress("Initializing DuckDB...", 0);
+          
+          if (!duckDBInitPromise) {
+            duckDBInitPromise = this.createSharedDuckDB((progress, message) => {
+              this.showProgress(message, progress);
+            });
+          }
+          
+          await duckDBInitPromise;
+          this.showProgress("Creating connection...", CONSTANTS.PROGRESS_STEPS.CREATING_CONNECTION);
         }
 
-        await duckDBInitPromise;
-
-        // Create a connection to the shared database
-        this.showProgress("Creating connection...", CONSTANTS.PROGRESS_STEPS.CREATING_CONNECTION);
+        // Create connection (same for both paths)
         this.conn = await sharedDuckDB.connect();
-
+        
+        // Update UI (same for both paths)
         this.duckdbReady = true;
         this.runButton.textContent = "Run";
         this.runButton.disabled = false;
-
-        // Hide progress
         this.output.classList.remove("show");
         this.widget.setAttribute("aria-busy", "false");
+        
+        // Call onDuckDBReady callback only for internal instances
+        if (!this.isExternalInstance && this.options.onDuckDBReady) {
+          this.options.onDuckDBReady(sharedDuckDB, duckDBModule);
+        }
       } catch (error) {
         console.error("Failed to initialize DuckDB:", error);
         this.runButton.textContent = "Error";
@@ -1295,6 +1328,12 @@
         await this.conn.close();
         this.conn = null;
       }
+      
+      // Clear registered files for this widget instance
+      if (this.registeredFiles) {
+        this.registeredFiles.clear();
+      }
+      
       // Remove event listeners
       if (this.highlightDebounced) {
         this.highlightDebounced = null;

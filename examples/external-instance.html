@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PondPilot Widget - External DuckDB Instance</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        pre {
+            background: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        .example-section {
+            margin: 40px 0;
+        }
+        .status {
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .status.ready {
+            background: #f0fdf4;
+            color: #166534;
+        }
+    </style>
+</head>
+<body>
+    <h1>External DuckDB Instance Example</h1>
+    <p>Share a single DuckDB instance across multiple widgets or access the internal instance.</p>
+    
+    <div class="example-section">
+        <h2>Shared Instance</h2>
+        <div id="shared-status" class="status">Loading DuckDB...</div>
+        
+        <h3>Widget 1 - Create Table</h3>
+        <div id="widget1">
+            <pre>
+CREATE TABLE products AS 
+SELECT * FROM (VALUES 
+    (1, 'Laptop', 999.99),
+    (2, 'Mouse', 25.50),
+    (3, 'Keyboard', 75.00)
+) AS t(id, name, price);</pre>
+        </div>
+        
+        <h3>Widget 2 - Query Table</h3>
+        <div id="widget2">
+            <pre>
+SELECT name, price 
+FROM products 
+WHERE price > 50
+ORDER BY price DESC;</pre>
+        </div>
+    </div>
+    
+    <div class="example-section">
+        <h2>Access Internal Instance</h2>
+        <div id="hook-widget">
+            <pre>
+SELECT 'Instance exposed via callback' as message;</pre>
+        </div>
+        <button id="external-btn" disabled>Run External Query</button>
+        <span id="result"></span>
+    </div>
+
+    <!-- Load the widget -->
+    <script src="../src/pondpilot-widget.js"></script>
+    
+    <script type="module">
+        // Initialize shared DuckDB instance
+        async function initDuckDB() {
+            const duckdbModule = await import('https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.1-dev68.0/+esm');
+            const duckdb = duckdbModule;
+            
+            const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
+            const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+            
+            // Create worker
+            const workerResponse = await fetch(bundle.mainWorker);
+            const workerScript = await workerResponse.text();
+            const workerBlob = new Blob([workerScript], { type: 'application/javascript' });
+            const workerUrl = URL.createObjectURL(workerBlob);
+            const worker = new Worker(workerUrl);
+            
+            const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
+            const db = new duckdb.AsyncDuckDB(logger, worker);
+            await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+            
+            setTimeout(() => URL.revokeObjectURL(workerUrl), 1000);
+            
+            return { db, module: duckdb };
+        }
+        
+        // Example 1: Shared instance
+        (async function() {
+            // Can pass promise directly - widget will wait
+            const dbPromise = initDuckDB();
+            
+            // Create widgets with promise - they'll wait for it
+            new PondPilot.Widget(document.querySelector('#widget1 pre'), {
+                duckdbInstance: dbPromise,
+            });
+            
+            new PondPilot.Widget(document.querySelector('#widget2 pre'), {
+                duckdbInstance: dbPromise,
+            });
+            
+            // Update status when ready
+            dbPromise.then(() => {
+                document.getElementById('shared-status').className = 'status ready';
+                document.getElementById('shared-status').textContent = 'DuckDB ready';
+            });
+        })();
+        
+        // Example 2: Access internal instance
+        let exposedDB = null;
+        
+        new PondPilot.Widget(document.querySelector('#hook-widget pre'), {
+            onDuckDBReady: (db, module) => {
+                exposedDB = db;
+                document.getElementById('external-btn').disabled = false;
+            }
+        });
+        
+        document.getElementById('external-btn').addEventListener('click', async () => {
+            if (!exposedDB) return;
+            
+            const conn = await exposedDB.connect();
+            const result = await conn.query("SELECT 'Success!' as status");
+            document.getElementById('result').textContent = result.toArray()[0].toJSON().status;
+            await conn.close();
+        });
+    </script>
+</body>
+</html>
