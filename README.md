@@ -164,6 +164,41 @@ import 'pondpilot-widget';
 export default DefaultTheme;
 ```
 
+## Local Examples (in this repo)
+
+You can run a small examples site from the examples/ folder:
+
+1) Serve the repository root (so examples/ is web‑served):
+
+```bash
+python3 -m http.server 8080
+# then open http://localhost:8080/examples/index.html
+```
+
+2) Local .duckdb database demo (optional):
+
+```bash
+# create a tiny demo DB at examples/data/blog.duckdb
+uv run examples/create-blog-db.py   # or: pip install duckdb pandas && python3 examples/create-blog-db.py
+
+# open the demo page
+open http://localhost:8080/examples/local-duckdb.html
+```
+
+3) Relative Parquet path handling demo (optional):
+
+```bash
+cd examples/relative-paths
+python3 create-test-data.py  # creates analytics.parquet in this directory
+cd ../..
+open http://localhost:8080/examples/relative-paths/test-relative-paths.html
+```
+
+Notes:
+- The example pages in this repo load the widget from ../src/ for local development. You can switch them to use the CDN by replacing the script tag with the CDN snippet from Installation.
+- The local .duckdb example shows how to provide an external DuckDB WASM instance to the widget and open a DB file served over HTTP.
+- The relative‑paths example demonstrates how the widget auto‑resolves relative parquet file paths in queries.
+
 ## Configuration Options
 
 | Option | Type | Default | Description |

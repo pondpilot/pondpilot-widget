@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PondPilot Widget — Local .duckdb file</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 24px;
+        background: #f7fafc;
+        color: #1a202c;
+      }
+      h1 { margin: 0 0 8px; }
+      .instructions {
+        background: #edf2f7;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 16px 0 24px;
+      }
+      /* Match styling used in examples/index.html */
+      pre {
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        padding: 16px;
+        overflow-x: auto;
+      }
+      code {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PondPilot + local .duckdb file</h1>
+    <div class="instructions">
+      <strong>How to run locally:</strong>
+      <ol>
+        <li>Generate a tiny demo DB: <code>python3 examples/create-blog-db.py</code></li>
+        <li>Serve this repo: <code>python3 -m http.server 8080</code></li>
+        <li>Open: <code>http://localhost:8080/examples/local-duckdb.html</code></li>
+        <li>Click "Run" on the blocks below</li>
+      </ol>
+      The DB will be created at <code>examples/data/blog.duckdb</code> and served from <code>/examples/data/blog.duckdb</code>.
+    </div>
+
+    <h2>Query 1 — row count</h2>
+    <pre class="pondpilot-db">SELECT COUNT(*) AS rows_in_orders FROM main.orders;</pre>
+
+    <h2>Query 2 — preview</h2>
+    <pre class="pondpilot-db">SELECT * FROM main.orders ORDER BY order_id LIMIT 5;</pre>
+
+    <h2>Query 3 — simple join</h2>
+    <pre class="pondpilot-db">SELECT o.order_id, o.customer, c.tier, o.amount
+FROM main.orders o
+JOIN main.customers c USING(customer)
+ORDER BY o.order_id;</pre>
+
+    <!-- Load the widget from local source for dev -->
+    <script src="../src/pondpilot-widget.js"></script>
+
+    <!-- Initialize DuckDB WASM and wire it into the widget -->
+    <script type="module">
+      import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.1-dev68.0/+esm';
+
+      const bundles = duckdb.getJsDelivrBundles();
+      const bundle = await duckdb.selectBundle(bundles);
+
+      async function createWorker() {
+        try { return new Worker(bundle.mainWorker); } catch (err) {}
+        const resp = await fetch(bundle.mainWorker);
+        const code = await resp.text();
+        const blob = new Blob([code], { type: 'text/javascript' });
+        const url = URL.createObjectURL(blob);
+        return new Worker(url);
+      }
+
+      const worker = await createWorker();
+      const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
+      const db = new duckdb.AsyncDuckDB(logger, worker);
+      await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+
+      // Where the .duckdb file is served from
+      const dbHttpUrl = new URL('/examples/data/blog.duckdb', window.location.href).href;
+      await db.registerFileURL('blog.duckdb', dbHttpUrl, duckdb.DuckDBDataProtocol.HTTP, false);
+      await db.open({ path: 'blog.duckdb' });
+
+      // Attach widgets to blocks with the custom class
+      document.querySelectorAll('pre.pondpilot-db').forEach((el) => {
+        new window.PondPilot.Widget(el, {
+          duckdbInstance: db,
+          duckdbModule: duckdb,
+          theme: 'light',
+          showPoweredBy: true,
+        });
+      });
+    </script>
+  </body>
+  </html>

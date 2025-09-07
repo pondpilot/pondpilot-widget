@@ -33,3 +33,4 @@ print(f"Columns: {', '.join(df.columns)}")
 print(f"File size: {df.memory_usage(deep=True).sum() / 1024:.2f} KB")
 print("\nFirst 5 rows:")
 print(df.head())
+
