@@ -6,6 +6,7 @@
 const fs = require("fs");
 const path = require("path");
 const { minify } = require("terser");
+const pkg = require("./package.json");
 
 async function build() {
   try {
@@ -27,7 +28,7 @@ async function build() {
 
     // Add banner
     const banner = `/**
- * PondPilot Widget v1.0.0
+ * PondPilot Widget v${pkg.version}
  * Transform static SQL code blocks into interactive snippets
  * https://github.com/pondpilot/pondpilot-widget
  * (c) 2025 PondPilot - MIT License

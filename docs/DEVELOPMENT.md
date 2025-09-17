@@ -154,7 +154,7 @@ All styles are in the `styles` constant. Follow the existing patterns:
 The DuckDB version is configured in the widget:
 ```javascript
 // In config object
-duckdbVersion: "1.29.1-dev68.0"
+duckdbVersion: "1.30.0"
 
 // To update, change the version in config and rebuild
 ```

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.0] - 2025-09-17
+
+### Changed
+- **Upgraded DuckDB WASM runtime** to version 1.30.0 for the latest engine fixes and features
+- **Updated documentation and examples** to reference DuckDB WASM 1.30.0 for consistency across integrations
+
 ## [1.2.0] - 2025-09-06
 
 ### Added

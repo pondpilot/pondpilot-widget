@@ -79,7 +79,7 @@ SELECT 'Instance exposed via callback' as message;</pre>
     <script type="module">
         // Initialize shared DuckDB instance
         async function initDuckDB() {
-            const duckdbModule = await import('https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.1-dev68.0/+esm');
+            const duckdbModule = await import('https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.30.0/+esm');
             const duckdb = duckdbModule;
             
             const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();

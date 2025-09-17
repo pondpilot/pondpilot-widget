@@ -1,5 +1,5 @@
 /**
- * PondPilot Widget v1.2.0
+ * PondPilot Widget v1.3.0
  * Transform static SQL code blocks into interactive snippets
  */
 
@@ -262,7 +262,7 @@
     baseUrl: window.PONDPILOT_BASE_URL || "https://app.pondpilot.io",
     theme: "light",
     autoInit: true,
-    duckdbVersion: "1.29.1-dev68.0",
+    duckdbVersion: "1.30.0",
     duckdbCDN: "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm",
     // duckdbIntegrity: { main: "sha384-...", worker: "sha384-..." }
   };
