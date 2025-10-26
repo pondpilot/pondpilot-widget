@@ -194,10 +194,18 @@ cd ../..
 open http://localhost:8080/examples/relative-paths/test-relative-paths.html
 ```
 
+4) A5 Geospatial Extension demo with interactive map:
+
+```bash
+# No setup required - just open the demo
+open http://localhost:8080/examples/a5-geospatial-demo.html
+```
+
 Notes:
 - The example pages in this repo load the widget from ../src/ for local development. You can switch them to use the CDN by replacing the script tag with the CDN snippet from Installation.
 - The local .duckdb example shows how to provide an external DuckDB WASM instance to the widget and open a DB file served over HTTP.
 - The relative‑paths example demonstrates how the widget auto‑resolves relative parquet file paths in queries.
+- The A5 demo shows how to use DuckDB community extensions for geospatial analysis with interactive Leaflet map visualization.
 
 ## Configuration Options
 

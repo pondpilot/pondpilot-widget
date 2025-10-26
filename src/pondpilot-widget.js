@@ -262,7 +262,7 @@
     baseUrl: window.PONDPILOT_BASE_URL || "https://app.pondpilot.io",
     theme: "light",
     autoInit: true,
-    duckdbVersion: "1.30.0",
+    duckdbVersion: "1.31.1-dev1.0",
     duckdbCDN: "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm",
     // duckdbIntegrity: { main: "sha384-...", worker: "sha384-..." }
   };

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A5 Geospatial Extension Demo - PondPilot Widget</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-box {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .info-box h3 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+
+        .example-section {
+            margin: 40px 0;
+        }
+
+        .example-section h2 {
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .map-instructions {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .controls button {
+            padding: 8px 16px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .controls button:hover:not(:disabled) {
+            background: #2563eb;
+        }
+
+        .controls button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .feature-card h4 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌍 A5 Geospatial Extension Demo</h1>
+    <p class="subtitle">Millimeter-accurate, equal-area indexing system for geospatial data</p>
+
+    <div class="info-box">
+        <h3>What is A5?</h3>
+        <p>A5 is an innovative geospatial index that partitions the world into pentagonal cells based on a geodesic grid.</p>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>🌍 Global Coverage</h4>
+                <p>Seamless indexing from global to millimeter scales</p>
+            </div>
+            <div class="feature-card">
+                <h4>📐 Equal Area</h4>
+                <p>All cells at same resolution have identical area</p>
+            </div>
+            <div class="feature-card">
+                <h4>🔍 31 Resolution Levels</h4>
+                <p>From world-spanning cells to sub-30mm² precision</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Map -->
+    <div class="example-section">
+        <h2>Interactive Map Visualization</h2>
+        <div class="map-instructions">
+            <strong>📍 Instructions:</strong> Run any query below that generates GeoJSON.
+            Then click "Visualize on Map" to see the pentagonal A5 cells overlaid on the map.
+        </div>
+
+        <div id="map"></div>
+
+        <div class="controls">
+            <button id="visualize-btn">📊 Visualize on Map</button>
+            <button id="clear-btn">🗑️ Clear Map</button>
+        </div>
+    </div>
+
+    <!-- Setup Query -->
+    <div class="example-section">
+        <h2>Step 1: Install A5 Extension</h2>
+        <pre class="pondpilot-snippet">
+-- Install and load the A5 geospatial extension
+INSTALL a5 FROM community;
+LOAD a5;
+
+SELECT '✅ A5 extension loaded!' as status;</pre>
+    </div>
+
+    <!-- Generate A5 Cell with Visualization -->
+    <div class="example-section">
+        <h2>Step 2: Generate A5 Cell for Madrid</h2>
+        <p>This query generates a GeoJSON polygon for an A5 cell at resolution 10, centered on Madrid, Spain.</p>
+        <pre class="pondpilot-snippet">
+-- Load spatial extension for GeoJSON generation
+INSTALL spatial;
+LOAD spatial;
+
+-- Generate GeoJSON for A5 cell in Madrid
+SELECT
+    ST_AsGeoJSON(
+        ST_MakePolygon(
+            ST_MakeLine(
+                list_transform(
+                    a5_cell_to_boundary(
+                        a5_lonlat_to_cell(-3.7037, 40.41677, 10)
+                    ),
+                    x -> ST_Point(x[1], x[2])
+                )
+            )
+        )
+    ) as geojson;</pre>
+    </div>
+
+    <!-- Load the widget -->
+    <script src="../src/pondpilot-widget.js"></script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([40.41677, -3.7037], 11);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Store layer group for A5 cells
+        let a5LayerGroup = L.layerGroup().addTo(map);
+
+        // Track the last query result
+        let lastGeoJSON = null;
+
+        // Listen for widget results
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('pondpilot-run-button')) {
+                // Get the widget instance
+                setTimeout(() => {
+                    const widget = e.target.closest('.pondpilot-widget');
+                    if (widget) {
+                        const output = widget.querySelector('.pondpilot-output-content table');
+                        if (output) {
+                            extractGeoJSON(output);
+                        }
+                    }
+                }, 500);
+            }
+        });
+
+        function extractGeoJSON(table) {
+            const rows = table.querySelectorAll('tbody tr');
+            const geoJSONs = [];
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                cells.forEach(cell => {
+                    const text = cell.textContent.trim();
+                    if (text.startsWith('{"type":"Polygon"') || text.startsWith('{"type":"Feature"')) {
+                        try {
+                            geoJSONs.push(JSON.parse(text));
+                        } catch (e) {
+                            console.error('Failed to parse GeoJSON:', e);
+                        }
+                    }
+                });
+            });
+
+            if (geoJSONs.length > 0) {
+                lastGeoJSON = geoJSONs;
+            }
+        }
+
+        document.getElementById('visualize-btn').addEventListener('click', () => {
+            if (!lastGeoJSON || lastGeoJSON.length === 0) return;
+
+            // Clear existing layers first
+            a5LayerGroup.clearLayers();
+
+            // Add new GeoJSON layers
+            lastGeoJSON.forEach((geoJSON, index) => {
+                const color = getColor(index);
+                const layer = L.geoJSON(geoJSON, {
+                    style: {
+                        color: color,
+                        fillColor: color,
+                        fillOpacity: 0.2,
+                        weight: 2
+                    }
+                }).bindPopup(`A5 Cell ${index + 1}`);
+
+                a5LayerGroup.addLayer(layer);
+            });
+
+            // Fit map to bounds
+            map.fitBounds(a5LayerGroup.getBounds());
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            a5LayerGroup.clearLayers();
+            lastGeoJSON = null;
+        });
+
+        function getColor(index) {
+            const colors = [
+                '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+                '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+            ];
+            return colors[index % colors.length];
+        }
+    </script>
+</body>
+</html>
