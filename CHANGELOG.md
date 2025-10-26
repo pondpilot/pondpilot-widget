@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.1] - 2025-10-25
+
+### Added
+- **Geospatial analysis example** - New interactive demo showcasing DuckDB community extensions
+  - Demonstrates A5 geospatial extension usage for spatial data analysis
+  - Interactive Leaflet map visualization integrated with SQL queries
+  - Shows how to load and use community extensions in the widget
+
+### Changed
+- **Updated DuckDB WASM runtime** to version 1.31.1-dev1.0 for latest engine improvements
+
 ## [1.3.0] - 2025-09-17
 
 ### Changed

@@ -77,7 +77,7 @@ PondPilot.config = {
   baseUrl: 'http://localhost:5173',    // Base URL
   theme: 'light',                      // Default theme
   autoInit: true,                      // Auto-initialize on load
-  duckdbVersion: '1.29.1-dev68.0',     // DuckDB WASM version
+  duckdbVersion: '1.31.1-dev1.0',     // DuckDB WASM version
   duckdbCDN: 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm'  // CDN URL
 };
 ```
