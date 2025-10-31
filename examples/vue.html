@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PondPilot + Vue 3</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 16px 60px;
+        line-height: 1.6;
+        color: #1f2937;
+      }
+
+      h1 {
+        margin-bottom: 0.25rem;
+      }
+
+      p.lead {
+        margin: 0 0 2rem;
+        color: #4b5563;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Embedding the PondPilot Widget in Vue</h1>
+      <p class="lead">
+        Wrap the widget in a Vue component so it is created and destroyed alongside your component tree.
+      </p>
+
+      <h2>Editable</h2>
+      <pondpilot-snippet
+        :sql="
+          `
+          SELECT
+            'Vue + PondPilot' AS integration,
+            2025 AS current_year,
+            'Editable snippet' AS note;
+          `
+        "
+        :options="{ editable: true }"
+      ></pondpilot-snippet>
+
+      <h2>Themed (Custom)</h2>
+      <pondpilot-snippet
+        :sql="
+          `
+          SELECT
+            'Custom Vue Theme' AS theme,
+            COUNT(*) AS emoji_count
+          FROM (VALUES ('🍜'), ('🍣'), ('🍱')) AS food(emoji);
+          `
+        "
+        :options="{ theme: 'midnight-neon', showPoweredBy: false }"
+      ></pondpilot-snippet>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="../src/pondpilot-widget.js"></script>
+    <script>
+      const { onMounted, onBeforeUnmount, defineComponent, h, ref, createApp } = Vue;
+
+      // Reuse the custom theme from the React/Theme demos
+      window.PondPilot.registerTheme('midnight-neon', {
+        extends: 'dark',
+        config: {
+          bgColor: '#141629',
+          borderColor: 'rgba(56, 189, 248, 0.18)',
+          editorBg: '#0e1122',
+          editorText: '#f8fafc',
+          editorFocusBg: '#161933',
+          controlsBg: 'rgba(14, 165, 233, 0.12)',
+          primaryBg: '#2563eb',
+          primaryHover: '#1d4ed8',
+          secondaryBg: 'rgba(56, 189, 248, 0.16)',
+          secondaryText: '#bae6fd',
+          syntaxKeyword: '#38bdf8',
+          syntaxString: '#f472b6',
+          syntaxNumber: '#c084fc',
+          syntaxComment: '#94a3b8',
+          syntaxSpecial: '#f97316',
+          syntaxIdentifier: '#facc15',
+        },
+      });
+
+      const PondPilotSnippet = defineComponent({
+        name: 'PondPilotSnippet',
+        props: {
+          sql: { type: String, required: true },
+          options: { type: Object, default: () => ({}) },
+        },
+        setup(props) {
+          const preRef = ref(null);
+          let widget = null;
+
+          onMounted(() => {
+            if (preRef.value) {
+              widget = window.PondPilot.create(preRef.value, props.options);
+            }
+          });
+
+          onBeforeUnmount(() => {
+            if (widget) widget.destroy();
+          });
+
+          return () =>
+            h(
+              'pre',
+              { ref: preRef, class: 'pondpilot-snippet' },
+              props.sql.trim()
+            );
+        },
+      });
+
+      createApp({
+        components: { PondPilotSnippet },
+      }).mount('#app');
+    </script>
+  </body>
+</html>
