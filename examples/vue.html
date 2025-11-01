@@ -25,38 +25,7 @@
     </style>
   </head>
   <body>
-    <div id="app">
-      <h1>Embedding the PondPilot Widget in Vue</h1>
-      <p class="lead">
-        Wrap the widget in a Vue component so it is created and destroyed alongside your component tree.
-      </p>
-
-      <h2>Editable</h2>
-      <pondpilot-snippet
-        :sql="
-          `
-          SELECT
-            'Vue + PondPilot' AS integration,
-            2025 AS current_year,
-            'Editable snippet' AS note;
-          `
-        "
-        :options="{ editable: true }"
-      ></pondpilot-snippet>
-
-      <h2>Themed (Custom)</h2>
-      <pondpilot-snippet
-        :sql="
-          `
-          SELECT
-            'Custom Vue Theme' AS theme,
-            COUNT(*) AS emoji_count
-          FROM (VALUES ('🍜'), ('🍣'), ('🍱')) AS food(emoji);
-          `
-        "
-        :options="{ theme: 'midnight-neon', showPoweredBy: false }"
-      ></pondpilot-snippet>
-    </div>
+    <div id="app"></div>
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="../src/pondpilot-widget.js"></script>
@@ -115,9 +84,38 @@
         },
       });
 
-      createApp({
+      const App = defineComponent({
+        name: 'App',
         components: { PondPilotSnippet },
-      }).mount('#app');
+        setup() {
+          return () => [
+            h('h1', null, 'Embedding the PondPilot Widget in Vue'),
+            h('p', { class: 'lead' }, 'Wrap the widget in a Vue component so it is created and destroyed alongside your component tree.'),
+            h('h2', null, 'Editable'),
+            h(PondPilotSnippet, {
+              sql: `
+          SELECT
+            'Vue + PondPilot' AS integration,
+            2025 AS current_year,
+            'Editable snippet' AS note;
+          `,
+              options: { editable: true }
+            }),
+            h('h2', null, 'Themed (Custom)'),
+            h(PondPilotSnippet, {
+              sql: `
+          SELECT
+            'Custom Vue Theme' AS theme,
+            COUNT(*) AS emoji_count
+          FROM (VALUES ('🍜'), ('🍣'), ('🍱')) AS food(emoji);
+          `,
+              options: { theme: 'midnight-neon', showPoweredBy: false }
+            })
+          ];
+        }
+      });
+
+      createApp(App).mount('#app');
     </script>
   </body>
 </html>
