@@ -400,7 +400,8 @@
 
   const DEFAULT_CONFIG = {
     selector: "pre.pondpilot-snippet, .pondpilot-snippet pre",
-    baseUrl: (typeof window !== "undefined" && window.PONDPILOT_BASE_URL) || "https://app.pondpilot.io",
+    baseUrl:
+      (typeof window !== "undefined" && window.PONDPILOT_BASE_URL) || "https://app.pondpilot.io",
     theme: "light",
     autoInit: true,
     editable: true,
@@ -457,8 +458,7 @@
 
   const FILE_EXTENSIONS = ["parquet", "csv", "json", "arrow", "ndjson"];
 
-  const styles = `
-
+  const styles = /* css */ `
     .pondpilot-widget {
       position: relative;
       margin: 1em 0;
@@ -636,7 +636,6 @@
       width: 100%;
       border-collapse: collapse;
       font-size: var(--pondpilot-metadata-font-size, 12px);
-      margin-bottom: 18px;
       background: var(--pondpilot-output-bg, rgba(255, 255, 255, 0.92));
       border: 1px solid var(--pondpilot-border-color, rgba(148, 163, 184, 0.18));
       border-radius: 12px;
@@ -774,7 +773,7 @@
       display: block;
     }
 
-    .pondpilot-widget:hover .pondpilot-duck {
+    .pondpilot-editor:hover .pondpilot-duck {
       opacity: 0.2;
     }
 
@@ -794,7 +793,7 @@
       transition: opacity 0.2s;
     }
 
-    .pondpilot-widget:hover .pondpilot-powered {
+    .pondpilot-editor:hover .pondpilot-powered {
       opacity: 1;
     }
 
@@ -964,7 +963,8 @@
     if (!value || typeof value !== "object") return null;
     if (value.module && typeof value.module === "object") return value.module;
     if (value.duckdbModule && typeof value.duckdbModule === "object") return value.duckdbModule;
-    if (value.moduleInstance && typeof value.moduleInstance === "object") return value.moduleInstance;
+    if (value.moduleInstance && typeof value.moduleInstance === "object")
+      return value.moduleInstance;
     if (value.duckdb && typeof value.duckdb === "object") return value.duckdb;
     return null;
   }
@@ -1007,7 +1007,9 @@
         ? BUILTIN_THEMES[String(themeDef.extends).toLowerCase()]
         : null;
 
-    const merged = base ? { ...base, ...(themeDef.config || themeDef) } : { ...(themeDef.config || themeDef) };
+    const merged = base
+      ? { ...base, ...(themeDef.config || themeDef) }
+      : { ...(themeDef.config || themeDef) };
     validateThemeConfig(merged);
     return merged;
   }
@@ -1054,7 +1056,9 @@
     if (typeof document === "undefined") return;
     if (!themeConfig || typeof themeConfig !== "object") return;
 
-    const imports = coerceStringArray(themeConfig.fontImports || themeConfig.fontUrls || themeConfig.fontUrl);
+    const imports = coerceStringArray(
+      themeConfig.fontImports || themeConfig.fontUrls || themeConfig.fontUrl,
+    );
     imports.forEach((href) => {
       if (loadedFontImports.has(href)) return;
       const link = document.createElement("link");
@@ -1125,7 +1129,10 @@
     const singleQuoteRegex = new RegExp(`'([^']+\\.(?:${extensions}))'`, "gi");
     const doubleQuoteRegex = new RegExp(`"([^"]+\\.(?:${extensions}))"`, "gi");
     const backtickRegex = new RegExp("`([^`]+\\.(?:" + extensions + "))`", "gi");
-    const functionRegex = new RegExp(`read_(?:parquet|csv|json|ndjson)\\s*\\(\\s*['"]([^'"]+)['"]`, "gi");
+    const functionRegex = new RegExp(
+      `read_(?:parquet|csv|json|ndjson)\\s*\\(\\s*['"]([^'"]+)['"]`,
+      "gi",
+    );
 
     let match;
     while ((match = singleQuoteRegex.exec(sql)) !== null) {
@@ -1160,7 +1167,9 @@
     }
 
     const normalizedBase =
-      baseUrl && baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl || (typeof window !== "undefined" ? window.location.href : "");
+      baseUrl && baseUrl.endsWith("/")
+        ? baseUrl.slice(0, -1)
+        : baseUrl || (typeof window !== "undefined" ? window.location.href : "");
 
     if (!normalizedBase) {
       return trimmed;
@@ -1168,11 +1177,14 @@
 
     try {
       if (normalizedBase.startsWith("file://")) {
-        const host = (typeof window !== "undefined" && (window.location.hostname || "localhost")) || "localhost";
+        const host =
+          (typeof window !== "undefined" && (window.location.hostname || "localhost")) ||
+          "localhost";
         const port = (typeof window !== "undefined" && (window.location.port || "8080")) || "8080";
         return new URL(trimmed.replace(/^\.\//, ""), `http://${host}:${port}/`).href;
       }
-      return new URL(trimmed, normalizedBase.endsWith("/") ? normalizedBase : normalizedBase + "/").href;
+      return new URL(trimmed, normalizedBase.endsWith("/") ? normalizedBase : normalizedBase + "/")
+        .href;
     } catch (_error) {
       return trimmed.replace(/^\.\//, "");
     }
@@ -1266,13 +1278,17 @@
       this.progressCallback = () => {};
 
       const elementOptions = extractOptionsFromElement(element);
-      const mergedCustomThemes = mergeCustomThemes(config.customThemes, elementOptions.customThemes, overrides.customThemes);
+      const mergedCustomThemes = mergeCustomThemes(
+        config.customThemes,
+        elementOptions.customThemes,
+        overrides.customThemes,
+      );
       const initQueriesFromOverrides =
         overrides.initQueries !== undefined
           ? normalizeInitQueries(overrides.initQueries)
           : elementOptions.initQueries !== undefined
-          ? normalizeInitQueries(elementOptions.initQueries)
-          : normalizeInitQueries(config.initQueries);
+            ? normalizeInitQueries(elementOptions.initQueries)
+            : normalizeInitQueries(config.initQueries);
 
       this.options = {
         ...config,
@@ -1311,6 +1327,14 @@
       applyTheme(this.widget, this.theme, this.options.customThemes);
 
       this.editor = this.createEditor();
+
+      if (this.options.showPoweredBy !== false) {
+        this.poweredBy = this.createPoweredBy();
+        this.editor.appendChild(this.poweredBy);
+        this.duck = this.createDuckLogo();
+        this.editor.appendChild(this.duck);
+      }
+
       this.widget.appendChild(this.editor);
 
       this.buttonContainer = this.createButtonContainer();
@@ -1320,13 +1344,6 @@
 
       this.output = this.createOutput();
       this.widget.appendChild(this.output);
-
-      if (this.options.showPoweredBy !== false) {
-        this.poweredBy = this.createPoweredBy();
-        this.widget.appendChild(this.poweredBy);
-        this.duck = this.createDuckLogo();
-        this.widget.appendChild(this.duck);
-      }
 
       this.element.dataset.pondpilotWidgetOriginal = "true";
       this.element.parentNode.replaceChild(this.widget, this.element);
@@ -1413,93 +1430,105 @@
 
       this.currentCode = this.originalCode;
 
-    if (this.options.editable !== false) {
-      pre.contentEditable = "true";
-      pre.spellcheck = false;
-      pre.setAttribute("role", "textbox");
-      pre.setAttribute("aria-label", "SQL editor");
-      pre.setAttribute("aria-multiline", "true");
+      if (this.options.editable !== false) {
+        pre.contentEditable = "true";
+        pre.spellcheck = false;
+        pre.setAttribute("role", "textbox");
+        pre.setAttribute("aria-label", "SQL editor");
+        pre.setAttribute("aria-multiline", "true");
 
-      const renderHighlight = (text, cursorOffset) => {
-        pre.innerHTML = sqlHighlight.highlight(text, { html: true });
-        this.setCursorOffset(pre, cursorOffset);
-        this.toggleResetButton(text !== this.originalCode);
-      };
+        const renderHighlight = (text, cursorOffset) => {
+          pre.innerHTML = sqlHighlight.highlight(text, { html: true });
+          this.setCursorOffset(pre, cursorOffset);
+          this.toggleResetButton(text !== this.originalCode);
+        };
 
-      const applyTextChange = (text, cursorOffset) => {
-        this.currentCode = text;
-        renderHighlight(text, cursorOffset);
-      };
+        const applyTextChange = (text, cursorOffset) => {
+          this.currentCode = text;
+          renderHighlight(text, cursorOffset);
+        };
 
-      const highlightDebounced = debounce((text, cursorOffset) => {
-        renderHighlight(text, cursorOffset);
-      }, CONSTANTS.DEBOUNCE_DELAY);
+        const highlightDebounced = debounce((text, cursorOffset) => {
+          renderHighlight(text, cursorOffset);
+        }, CONSTANTS.DEBOUNCE_DELAY);
 
-      pre.addEventListener("input", () => {
-        const text = pre.textContent || "";
-        this.currentCode = text;
-        const selection = window.getSelection();
-        const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-        const cursorOffset = range ? this.getCursorOffset(pre, range) : text.length;
-
-        if (text.length < CONSTANTS.LARGE_SQL_THRESHOLD) {
-          applyTextChange(text, cursorOffset);
-        } else {
-          highlightDebounced(text, cursorOffset);
-        }
-      });
-
-      pre.addEventListener("keydown", (event) => {
-        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-          event.preventDefault();
-          this.run();
-          return;
-        }
-
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0) {
-          return;
-        }
-
-        if (event.key === "Tab") {
-          event.preventDefault();
-          const range = selection.getRangeAt(0);
-          const cursorOffset = this.getCursorOffset(pre, range);
+        pre.addEventListener("input", () => {
           const text = pre.textContent || "";
-          const lineStart = text.lastIndexOf("\n", cursorOffset - 1) + 1;
+          this.currentCode = text;
+          const selection = window.getSelection();
+          const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+          const cursorOffset = range ? this.getCursorOffset(pre, range) : text.length;
 
-          if (event.shiftKey) {
-            const leading = text.slice(lineStart, cursorOffset);
-            if (leading.startsWith("\t")) {
-              applyTextChange(text.slice(0, lineStart) + leading.slice(1) + text.slice(cursorOffset), cursorOffset - 1);
-            } else if (leading.startsWith("  ")) {
-              applyTextChange(text.slice(0, lineStart) + leading.slice(2) + text.slice(cursorOffset), cursorOffset - 2);
-            }
+          if (text.length < CONSTANTS.LARGE_SQL_THRESHOLD) {
+            applyTextChange(text, cursorOffset);
+          } else {
+            highlightDebounced(text, cursorOffset);
+          }
+        });
+
+        pre.addEventListener("keydown", (event) => {
+          if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+            event.preventDefault();
+            this.run();
             return;
           }
 
-          const insert = "\t";
-          applyTextChange(text.slice(0, cursorOffset) + insert + text.slice(cursorOffset), cursorOffset + insert.length);
-          return;
-        }
+          const selection = window.getSelection();
+          if (!selection || selection.rangeCount === 0) {
+            return;
+          }
 
-        if (event.key === "Enter" && !event.metaKey && !event.ctrlKey) {
-          event.preventDefault();
-          const range = selection.getRangeAt(0);
-          const cursorOffset = this.getCursorOffset(pre, range);
-          const text = pre.textContent || "";
-          const lineStart = text.lastIndexOf("\n", cursorOffset - 1) + 1;
-          const leading = text.slice(lineStart, cursorOffset);
-          const indentMatch = leading.match(/^[\t ]*/);
-          const indent = event.shiftKey ? "" : indentMatch ? indentMatch[0] : "";
-          const insert = "\n" + indent;
-          applyTextChange(text.slice(0, cursorOffset) + insert + text.slice(cursorOffset), cursorOffset + insert.length);
-        }
-      });
+          if (event.key === "Tab") {
+            event.preventDefault();
+            const range = selection.getRangeAt(0);
+            const cursorOffset = this.getCursorOffset(pre, range);
+            const text = pre.textContent || "";
+            const lineStart = text.lastIndexOf("\n", cursorOffset - 1) + 1;
+
+            if (event.shiftKey) {
+              const leading = text.slice(lineStart, cursorOffset);
+              if (leading.startsWith("\t")) {
+                applyTextChange(
+                  text.slice(0, lineStart) + leading.slice(1) + text.slice(cursorOffset),
+                  cursorOffset - 1,
+                );
+              } else if (leading.startsWith("  ")) {
+                applyTextChange(
+                  text.slice(0, lineStart) + leading.slice(2) + text.slice(cursorOffset),
+                  cursorOffset - 2,
+                );
+              }
+              return;
+            }
+
+            const insert = "\t";
+            applyTextChange(
+              text.slice(0, cursorOffset) + insert + text.slice(cursorOffset),
+              cursorOffset + insert.length,
+            );
+            return;
+          }
+
+          if (event.key === "Enter" && !event.metaKey && !event.ctrlKey) {
+            event.preventDefault();
+            const range = selection.getRangeAt(0);
+            const cursorOffset = this.getCursorOffset(pre, range);
+            const text = pre.textContent || "";
+            const lineStart = text.lastIndexOf("\n", cursorOffset - 1) + 1;
+            const leading = text.slice(lineStart, cursorOffset);
+            const indentMatch = leading.match(/^[\t ]*/);
+            const indent = event.shiftKey ? "" : indentMatch ? indentMatch[0] : "";
+            const insert = "\n" + indent;
+            applyTextChange(
+              text.slice(0, cursorOffset) + insert + text.slice(cursorOffset),
+              cursorOffset + insert.length,
+            );
+          }
+        });
+      }
+
+      return editor;
     }
-
-    return editor;
-  }
 
     toggleResetButton(show) {
       if (!this.resetButton) return;
@@ -1570,7 +1599,10 @@
           this.isExternalInstance = true;
           let externalInstance = this.options.duckdbInstance;
 
-          this.showProgress("Waiting for DuckDB instance...", CONSTANTS.PROGRESS_STEPS.FETCHING_BUNDLES);
+          this.showProgress(
+            "Waiting for DuckDB instance...",
+            CONSTANTS.PROGRESS_STEPS.FETCHING_BUNDLES,
+          );
 
           if (externalInstance && typeof externalInstance.then === "function") {
             externalInstance = await externalInstance;
@@ -1614,7 +1646,10 @@
             }
           }
 
-          this.showProgress("Connecting to DuckDB instance...", CONSTANTS.PROGRESS_STEPS.CREATING_CONNECTION);
+          this.showProgress(
+            "Connecting to DuckDB instance...",
+            CONSTANTS.PROGRESS_STEPS.CREATING_CONNECTION,
+          );
         } else {
           this.showProgress("Initializing DuckDB...", CONSTANTS.PROGRESS_STEPS.MODULE_LOADING);
 
@@ -1650,69 +1685,74 @@
       } catch (error) {
         console.error("Failed to initialize DuckDB:", error);
         this.runButton.textContent = "Error";
-        this.showError("Failed to initialize DuckDB: " + (error && error.message ? error.message : String(error)));
+        this.showError(
+          "Failed to initialize DuckDB: " +
+            (error && error.message ? error.message : String(error)),
+        );
         this.widget.setAttribute("aria-busy", "false");
       }
     }
 
-  async executeInitQueries() {
-    const queries = normalizeInitQueries(this.options.initQueries);
-    if (!queries.length || !this.conn) return;
+    async executeInitQueries() {
+      const queries = normalizeInitQueries(this.options.initQueries);
+      if (!queries.length || !this.conn) return;
 
-    const signature = JSON.stringify(queries);
-    if (duckDBInitQueriesExecuted) {
-      if (signature !== duckDBInitQueriesSignature) {
-        console.warn("DuckDB init queries already executed; updates will not take effect until page reload.");
+      const signature = JSON.stringify(queries);
+      if (duckDBInitQueriesExecuted) {
+        if (signature !== duckDBInitQueriesSignature) {
+          console.warn(
+            "DuckDB init queries already executed; updates will not take effect until page reload.",
+          );
+        }
+        return;
       }
-      return;
-    }
 
-    let progressVisible = false;
-    const showInitProgress = (message) => {
-      progressVisible = true;
-      this.showProgress(message, CONSTANTS.PROGRESS_STEPS.COMPLETE - 5);
-    };
+      let progressVisible = false;
+      const showInitProgress = (message) => {
+        progressVisible = true;
+        this.showProgress(message, CONSTANTS.PROGRESS_STEPS.COMPLETE - 5);
+      };
 
-    const clearInitProgress = () => {
-      if (!progressVisible) return;
-      const content = this.output.querySelector(".pondpilot-output-content");
-      if (content) content.innerHTML = "";
-      this.output.classList.remove("show");
-      progressVisible = false;
-    };
+      const clearInitProgress = () => {
+        if (!progressVisible) return;
+        const content = this.output.querySelector(".pondpilot-output-content");
+        if (content) content.innerHTML = "";
+        this.output.classList.remove("show");
+        progressVisible = false;
+      };
 
-    if (duckDBInitQueriesPromise) {
-      showInitProgress("Waiting for initialization queries...");
+      if (duckDBInitQueriesPromise) {
+        showInitProgress("Waiting for initialization queries...");
+        try {
+          await duckDBInitQueriesPromise;
+        } finally {
+          clearInitProgress();
+        }
+        return;
+      }
+
+      duckDBInitQueriesSignature = signature;
+      duckDBInitQueriesPromise = (async () => {
+        for (let index = 0; index < queries.length; index++) {
+          const query = queries[index];
+          try {
+            await this.conn.query(query);
+          } catch (error) {
+            console.error(`Init query failed (${index + 1}/${queries.length}): ${query}`, error);
+            throw error;
+          }
+        }
+        duckDBInitQueriesExecuted = true;
+      })();
+
+      showInitProgress("Running initialization queries...");
       try {
         await duckDBInitQueriesPromise;
       } finally {
+        duckDBInitQueriesPromise = null;
         clearInitProgress();
       }
-      return;
     }
-
-    duckDBInitQueriesSignature = signature;
-    duckDBInitQueriesPromise = (async () => {
-      for (let index = 0; index < queries.length; index++) {
-        const query = queries[index];
-        try {
-          await this.conn.query(query);
-        } catch (error) {
-          console.error(`Init query failed (${index + 1}/${queries.length}): ${query}`, error);
-          throw error;
-        }
-      }
-      duckDBInitQueriesExecuted = true;
-    })();
-
-    showInitProgress("Running initialization queries...");
-    try {
-      await duckDBInitQueriesPromise;
-    } finally {
-      duckDBInitQueriesPromise = null;
-      clearInitProgress();
-    }
-  }
 
     showProgress(message, percent) {
       const outputContent = this.output.querySelector(".pondpilot-output-content");
@@ -1739,7 +1779,10 @@
         this.progressCallback(CONSTANTS.PROGRESS_STEPS.FETCHING_BUNDLES, "Fetching bundles...");
         const bundles = duckdb.getJsDelivrBundles();
 
-        this.progressCallback(CONSTANTS.PROGRESS_STEPS.SELECTING_BUNDLE, "Selecting best bundle...");
+        this.progressCallback(
+          CONSTANTS.PROGRESS_STEPS.SELECTING_BUNDLE,
+          "Selecting best bundle...",
+        );
         const bundle = await duckdb.selectBundle(bundles);
         this.progressCallback(CONSTANTS.PROGRESS_STEPS.CREATING_WORKER, "Creating worker...");
 
@@ -1747,7 +1790,9 @@
         try {
           const workerResponse = await fetch(bundle.mainWorker);
           if (!workerResponse.ok) {
-            throw new Error(`Failed to fetch worker: ${workerResponse.status} ${workerResponse.statusText}`);
+            throw new Error(
+              `Failed to fetch worker: ${workerResponse.status} ${workerResponse.statusText}`,
+            );
           }
           const workerScript = await workerResponse.text();
           const workerBlob = new Blob([workerScript], { type: "application/javascript" });
@@ -1759,7 +1804,9 @@
             worker = new Worker(bundle.mainWorker);
           } catch (_directError) {
             const workerUrl = URL.createObjectURL(
-              new Blob([`importScripts("${bundle.mainWorker}");`], { type: "application/javascript" }),
+              new Blob([`importScripts("${bundle.mainWorker}");`], {
+                type: "application/javascript",
+              }),
             );
             worker = new Worker(workerUrl);
           }
@@ -1769,7 +1816,10 @@
         this.progressCallback(CONSTANTS.PROGRESS_STEPS.INITIALIZING_DB, "Initializing DuckDB...");
         sharedDuckDB = new duckdb.AsyncDuckDB(logger, worker);
 
-        this.progressCallback(CONSTANTS.PROGRESS_STEPS.LOADING_MODULE, "Loading PondPilot module...");
+        this.progressCallback(
+          CONSTANTS.PROGRESS_STEPS.LOADING_MODULE,
+          "Loading PondPilot module...",
+        );
         await sharedDuckDB.instantiate(bundle.mainModule, bundle.pthreadWorker);
         this.progressCallback(CONSTANTS.PROGRESS_STEPS.COMPLETE, "Ready!");
 
@@ -1804,7 +1854,9 @@
     }
 
     async processRelativeParquetPaths(sql) {
-      console.warn("processRelativeParquetPaths is deprecated; using processSQLFileReferences instead.");
+      console.warn(
+        "processRelativeParquetPaths is deprecated; using processSQLFileReferences instead.",
+      );
       return this.processSQLFileReferences(sql);
     }
 
@@ -1839,7 +1891,10 @@
           await new Promise((resolve) => setTimeout(resolve, remainingTime));
         }
 
-        this.displayResults(result.toArray().map((row) => row.toJSON()), elapsed);
+        this.displayResults(
+          result.toArray().map((row) => row.toJSON()),
+          elapsed,
+        );
         this.runButton.textContent = "Run";
       } catch (error) {
         console.error("Query failed:", error);
@@ -1860,7 +1915,8 @@
       const outputContent = this.output.querySelector(".pondpilot-output-content");
 
       if (!data || data.length === 0) {
-        outputContent.innerHTML = '<div style="text-align:center; color: var(--pondpilot-muted-text, #64748b);">No results</div>';
+        outputContent.innerHTML =
+          '<div style="text-align:center; color: var(--pondpilot-muted-text, #64748b);">No results</div>';
         return;
       }
 
@@ -1916,7 +1972,8 @@
 
       if (message.includes("NoSuchFile") || message.includes("ENOENT")) {
         improvedMessage = "File not found";
-        suggestion = "Check that the referenced file exists and is reachable from the configured baseUrl.";
+        suggestion =
+          "Check that the referenced file exists and is reachable from the configured baseUrl.";
       } else if (message.includes("HTTP") && message.includes("403")) {
         improvedMessage = "Access denied (403)";
         suggestion = "Verify CORS headers or authentication for the requested file.";
@@ -1980,7 +2037,11 @@
   }
 
   function ensureMutationObserver() {
-    if (mutationObserver || typeof MutationObserver === "undefined" || typeof document === "undefined") {
+    if (
+      mutationObserver ||
+      typeof MutationObserver === "undefined" ||
+      typeof document === "undefined"
+    ) {
       return;
     }
 
@@ -1993,7 +2054,9 @@
             if (widget) widget.destroy();
             return;
           }
-          const descendants = node.querySelectorAll ? node.querySelectorAll(".pondpilot-widget") : [];
+          const descendants = node.querySelectorAll
+            ? node.querySelectorAll(".pondpilot-widget")
+            : [];
           descendants.forEach((element) => {
             const widget = widgetInstances.get(element);
             if (widget) widget.destroy();
@@ -2056,8 +2119,9 @@
 
     const elements = collectElements(target);
     elements.forEach((element) => {
-      const widgetElement =
-        element.classList.contains("pondpilot-widget") ? element : element.querySelector(".pondpilot-widget");
+      const widgetElement = element.classList.contains("pondpilot-widget")
+        ? element
+        : element.querySelector(".pondpilot-widget");
       if (!widgetElement) return;
       const widget = widgetInstances.get(widgetElement);
       if (widget) {
