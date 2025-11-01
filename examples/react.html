@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PondPilot + React</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 16px 60px;
+        line-height: 1.6;
+        color: #1f2937;
+      }
+
+      h1 {
+        margin-bottom: 0.25rem;
+      }
+
+      p.lead {
+        margin-top: 0;
+        margin-bottom: 2.25rem;
+        color: #4b5563;
+      }
+
+      pre.demo {
+        margin-top: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Using PondPilot in React</h1>
+    <p class="lead">
+      The widget ships as a vanilla JS bundle, so you can wrap it with React hooks and refs. This example uses the UMD
+      build of React 18 for convenience.
+    </p>
+
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="../src/pondpilot-widget.js"></script>
+    <script type="text/javascript">
+      const { useEffect, useRef } = React;
+
+      function PondPilotSnippet({ sql, options }) {
+        const preRef = useRef(null);
+        const widgetRef = useRef(null);
+
+        useEffect(() => {
+          if (!preRef.current) return;
+
+          // Create the widget when the component mounts
+          widgetRef.current = window.PondPilot.create(preRef.current, options);
+
+          return () => {
+            // Destroy when unmounting to avoid leaking DuckDB connections
+            if (widgetRef.current) {
+              widgetRef.current.destroy();
+            }
+          };
+        }, [options]);
+
+        return React.createElement(
+          'pre',
+          { ref: preRef, className: 'pondpilot-snippet demo' },
+          sql.trim()
+        );
+      }
+
+      function App() {
+        return React.createElement(
+          React.Fragment,
+          null,
+          React.createElement('h2', null, 'Basic Usage'),
+          React.createElement(PondPilotSnippet, {
+            sql: `
+              SELECT
+                'React + PondPilot' AS integration,
+                42 AS answer_to_everything,
+                CURRENT_TIMESTAMP AS rendered_at;
+            `,
+            options: { editable: true, showPoweredBy: true },
+          }),
+          React.createElement('h2', null, 'Dark Theme'),
+          React.createElement(PondPilotSnippet, {
+            sql: `
+              WITH stars AS (
+                SELECT unnest(['🌠','✨','🌙']) AS icon
+              )
+              SELECT icon AS sky FROM stars;
+            `,
+            options: { theme: 'dark', editable: false },
+          })
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+    </script>
+  </body>
+</html>

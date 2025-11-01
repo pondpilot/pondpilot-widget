@@ -49,9 +49,9 @@
     <div class="instructions">
         <h3>Test Instructions:</h3>
         <ol>
-            <li>Create a test parquet file named <code>analytics.parquet</code></li>
-            <li>Start a local web server in this directory: <code>python3 -m http.server 8080</code></li>
-            <li>Open this page at <code>http://localhost:8080/test-relative-paths.html</code></li>
+            <li>Generate <code>analytics.parquet</code> with <code>python3 create-test-data.py</code></li>
+            <li>From the repository root, start a local web server: <code>python3 -m http.server 8080</code></li>
+            <li>Open this page at <code>http://localhost:8080/examples/relative-paths/test-relative-paths.html</code></li>
             <li>Click "Run" on each test case to verify relative path handling</li>
         </ol>
     </div>
@@ -97,11 +97,13 @@ LIMIT 5</code></pre>
     </div>
 
     <!-- Load the widget -->
-    <script src="dist/pondpilot-widget.js"></script>
+    <script>
+        window.PONDPILOT_BASE_URL = new URL('.', window.location.href).href;
+    </script>
+    <script src="../../src/pondpilot-widget.js"></script>
     <script>
         // Widget will auto-initialize
         console.log('PondPilot Widget loaded and initialized');
     </script>
 </body>
 </html>
-
