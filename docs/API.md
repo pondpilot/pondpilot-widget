@@ -25,6 +25,41 @@ Set the base URL for your PondPilot instance before loading the widget:
 <script src="path/to/pondpilot-widget.js"></script>
 ```
 
+### `window.PONDPILOT_CONFIG`
+
+Provide multiple defaults in a single object before loading the script:
+
+```html
+<script>
+  window.PONDPILOT_CONFIG = {
+    autoInit: false,
+    initQueries: ["INSTALL httpfs;", "LOAD httpfs;"],
+    resetQueries: ["DROP TABLE IF EXISTS scratch_table;"]
+  };
+</script>
+<script src="path/to/pondpilot-widget.js"></script>
+```
+
+### `window.PONDPILOT_INIT_QUERIES`
+
+Legacy helper for setting init queries via a global:
+
+```html
+<script>
+  window.PONDPILOT_INIT_QUERIES = ["INSTALL spatial;", "LOAD spatial;"];
+</script>
+```
+
+### `window.PONDPILOT_RESET_QUERIES`
+
+Run cleanup SQL whenever a widget resets:
+
+```html
+<script>
+  window.PONDPILOT_RESET_QUERIES = ["DROP TABLE IF EXISTS scratch_table;"];
+</script>
+```
+
 ## JavaScript API
 
 All helpers live under `window.PondPilot`.
@@ -39,6 +74,7 @@ PondPilot.config({
   baseUrl: "https://cdn.example.com/data",
   autoInit: false,
   initQueries: ["INSTALL httpfs", "LOAD httpfs"],
+  resetQueries: ["DROP TABLE IF EXISTS scratch_table;"],
 });
 ```
 
@@ -153,6 +189,7 @@ widget.run();
 | `duckdbModule`     | `object`                                  | `undefined`                                        | Provide an accompanying module when supplying a custom instance             |
 | `onDuckDBReady`    | `function`                                | `undefined`                                        | Callback invoked after the internal DuckDB has been instantiated           |
 | `initQueries`      | `string[]`                                | `[]`                                               | SQL statements executed once after DuckDB connection is available          |
+| `resetQueries`     | `string[]`                                | `[]`                                               | SQL statements executed every time the reset button is pressed             |
 | `showPoweredBy`    | `boolean`                                 | `true`                                             | Toggle the branding footer                                                  |
 | `poweredByLabel`   | `string`                                  | `"PondPilot"`                                      | Link label in the footer                                                    |
 | `customThemes`     | `Record<string, CustomTheme>`             | `{}`                                               | Theme registry merged via `registerTheme`                                   |
@@ -179,15 +216,16 @@ Every widget can override options declaratively:
 | `data-editable`           | `"false"`                                            | Disable editing                         |
 | `data-show-powered-by`    | `"false"`                                            | Hide footer                             |
 | `data-init-queries`       | `"LOAD httpfs; SET s3_region='us-east-1'"` or JSON   | Per-widget init queries                 |
+| `data-reset-queries`      | `"DROP TABLE IF EXISTS scratch;"` or JSON            | Per-widget reset queries                |
 
-Boolean values accept `true/false`, `1/0`, or `yes/no`. Init queries accept semicolon-delimited strings or JSON arrays.
+Boolean values accept `true/false`, `1/0`, or `yes/no`. Init/reset queries accept semicolon-delimited strings or JSON arrays.
 
 ## Widget Instance Methods
 
 | Method            | Description                                            |
 | ----------------- | ------------------------------------------------------ |
 | `widget.run()`    | Executes the current SQL query                         |
-| `widget.reset()`  | Restores the original SQL block                        |
+| `widget.reset()`  | Restores the original SQL block and runs reset queries |
 | `widget.destroy()`| Destroys the widget and releases resources             |
 | `widget.cleanup()`| Async helper used internally to close DuckDB handles   |
 

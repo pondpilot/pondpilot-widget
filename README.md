@@ -18,6 +18,7 @@ Transform static SQL code blocks into interactive snippets powered by DuckDB WAS
 - 🔧 **Easy Integration** - Works with any static site or documentation
 - 🧩 **Configurable** - Tweak selectors, auto-init, editable mode, and UI affordances
 - 🗂️ **Init Queries** - Install DuckDB extensions or run setup SQL once per page
+- ♻️ **Reset Queries** - Optionally run cleanup SQL when the editor resets
 - 🎨 **Custom Themes** - Extend light/dark defaults or register fully custom palettes
 - ♿ **Accessible** - Full ARIA support and keyboard navigation
 - 🎯 **Lightweight** - Only ~22KB minified, loads DuckDB on-demand
@@ -140,6 +141,7 @@ config({
   baseUrl: "https://cdn.example.com/datasets",
   autoInit: false,
   initQueries: ["INSTALL httpfs", "LOAD httpfs"],
+  resetQueries: ["DROP TABLE IF EXISTS scratch_table;"],
 });
 
 // Register a custom theme and apply it via data-theme or options.theme

@@ -120,8 +120,9 @@ This creates:
    - Test examples across browsers
    - Toggle light/dark/custom themes
    - Verify read-only widgets
-   - Test error messaging and init queries
+- Test error messaging and init queries
 - Verify Ctrl/Cmd+Enter runs the current query
+- Verify reset queries clean up temporary tables
 
 3. **Browser Compatibility**
    - Chrome/Edge (requires CORS headers for SharedArrayBuffer)

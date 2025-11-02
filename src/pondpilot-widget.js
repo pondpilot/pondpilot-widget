@@ -414,6 +414,7 @@
     showPoweredBy: true,
     poweredByLabel: "PondPilot",
     initQueries: [],
+    resetQueries: [],
     customThemes: {},
   };
 
@@ -431,6 +432,9 @@
       if (normalized.customThemes) {
         normalized.customThemes = mergeCustomThemes(config.customThemes, normalized.customThemes);
       }
+      if (normalized.resetQueries !== undefined) {
+        normalized.resetQueries = normalizeInitQueries(normalized.resetQueries);
+      }
       if (normalized.autoInit !== undefined) {
         normalized.autoInit = Boolean(normalized.autoInit);
       }
@@ -439,6 +443,10 @@
 
     if (window.PONDPILOT_INIT_QUERIES !== undefined) {
       config.initQueries = normalizeInitQueries(window.PONDPILOT_INIT_QUERIES);
+    }
+
+    if (window.PONDPILOT_RESET_QUERIES !== undefined) {
+      config.resetQueries = normalizeInitQueries(window.PONDPILOT_RESET_QUERIES);
     }
 
     if (window.PONDPILOT_AUTO_INIT !== undefined) {
@@ -884,10 +892,16 @@
     document.head.appendChild(styleSheet);
   }
 
+  function sanitizeQueryEntry(entry) {
+    const trimmed = String(entry).trim();
+    if (!trimmed) return "";
+    return trimmed.replace(/\s*;$/, ";");
+  }
+
   function normalizeInitQueries(value) {
     if (!value) return [];
     if (Array.isArray(value)) {
-      return value.map((entry) => String(entry).trim()).filter(Boolean);
+      return value.map(sanitizeQueryEntry).filter(Boolean);
     }
     if (typeof value === "string") {
       const trimmed = value.trim();
@@ -896,7 +910,7 @@
         try {
           const parsed = JSON.parse(trimmed);
           if (Array.isArray(parsed)) {
-            return parsed.map((entry) => String(entry).trim()).filter(Boolean);
+            return parsed.map(sanitizeQueryEntry).filter(Boolean);
           }
         } catch (_error) {
           // Fallback to delimiter parsing
@@ -904,7 +918,7 @@
       }
       return trimmed
         .split(/[\r\n;]+/)
-        .map((entry) => entry.trim())
+        .map(sanitizeQueryEntry)
         .filter(Boolean);
     }
     return [];
@@ -1237,6 +1251,9 @@
     const initQueriesAttr = getAttribute(element, "data-init-queries");
     if (initQueriesAttr) options.initQueries = normalizeInitQueries(initQueriesAttr);
 
+    const resetQueriesAttr = getAttribute(element, "data-reset-queries");
+    if (resetQueriesAttr) options.resetQueries = normalizeInitQueries(resetQueriesAttr);
+
     return options;
   }
 
@@ -1278,24 +1295,46 @@
       this.progressCallback = () => {};
 
       const elementOptions = extractOptionsFromElement(element);
+      const {
+        customThemes: elementCustomThemes,
+        initQueries: elementInitQueries,
+        resetQueries: elementResetQueries,
+        ...restElementOptions
+      } = elementOptions;
+      const {
+        customThemes: overridesCustomThemes,
+        initQueries: overridesInitQueries,
+        resetQueries: overridesResetQueries,
+        ...restOverrides
+      } = overrides || {};
+
       const mergedCustomThemes = mergeCustomThemes(
         config.customThemes,
-        elementOptions.customThemes,
-        overrides.customThemes,
+        elementCustomThemes,
+        overridesCustomThemes,
       );
+
       const initQueriesFromOverrides =
-        overrides.initQueries !== undefined
-          ? normalizeInitQueries(overrides.initQueries)
-          : elementOptions.initQueries !== undefined
-            ? normalizeInitQueries(elementOptions.initQueries)
+        overridesInitQueries !== undefined
+          ? normalizeInitQueries(overridesInitQueries)
+          : elementInitQueries !== undefined
+            ? normalizeInitQueries(elementInitQueries)
             : normalizeInitQueries(config.initQueries);
+
+      const resetQueriesFromOverrides =
+        overridesResetQueries !== undefined
+          ? normalizeInitQueries(overridesResetQueries)
+          : elementResetQueries !== undefined
+            ? normalizeInitQueries(elementResetQueries)
+            : normalizeInitQueries(config.resetQueries);
 
       this.options = {
         ...config,
-        ...elementOptions,
-        ...overrides,
+        ...restElementOptions,
+        ...restOverrides,
         customThemes: mergedCustomThemes,
         initQueries: initQueriesFromOverrides,
+        resetQueries: resetQueriesFromOverrides,
       };
 
       this.options.baseUrl = sanitizeBaseUrl(this.options.baseUrl);
@@ -1754,6 +1793,26 @@
       }
     }
 
+    async executeResetQueries(queries) {
+      const list = Array.isArray(queries) ? queries : normalizeInitQueries(queries);
+      if (!list.length || !this.conn) return;
+
+      const progressFloor = CONSTANTS.PROGRESS_STEPS.CREATING_CONNECTION;
+      const progressRange = CONSTANTS.PROGRESS_STEPS.COMPLETE - progressFloor;
+
+      try {
+        for (let index = 0; index < list.length; index++) {
+          const percent = progressFloor + Math.round(((index + 1) / list.length) * progressRange);
+          this.showProgress(`Running reset queries (${index + 1}/${list.length})...`, percent);
+          await this.conn.query(list[index]);
+        }
+      } finally {
+        const content = this.output.querySelector(".pondpilot-output-content");
+        if (content) content.innerHTML = "";
+        this.output.classList.remove("show");
+      }
+    }
+
     showProgress(message, percent) {
       const outputContent = this.output.querySelector(".pondpilot-output-content");
       const safePercent = Math.min(100, Math.max(0, percent || 0));
@@ -1998,11 +2057,33 @@
     async reset() {
       const pre = this.editor.querySelector("pre");
       if (!pre) return;
-      pre.innerHTML = sqlHighlight.highlight(this.originalCode, { html: true });
-      this.currentCode = this.originalCode;
-      this.toggleResetButton(false);
-      this.output.classList.remove("show");
-      this.output.querySelector(".pondpilot-output-content").innerHTML = "";
+
+      const resetButton = this.resetButton;
+      if (resetButton) resetButton.disabled = true;
+      this.widget.setAttribute("aria-busy", "true");
+
+      try {
+        const resetQueries = normalizeInitQueries(this.options.resetQueries || []);
+        if (this.conn && resetQueries.length) {
+          await this.executeResetQueries(resetQueries);
+        }
+
+        pre.innerHTML = sqlHighlight.highlight(this.originalCode, { html: true });
+        this.currentCode = this.originalCode;
+        this.toggleResetButton(false);
+        const content = this.output.querySelector(".pondpilot-output-content");
+        if (content) content.innerHTML = "";
+        this.output.classList.remove("show");
+      } catch (error) {
+        console.error("Reset queries failed:", error);
+        this.showError(
+          "Reset failed: " + (error && error.message ? error.message : String(error)),
+        );
+        return;
+      } finally {
+        if (resetButton) resetButton.disabled = false;
+        this.widget.setAttribute("aria-busy", "false");
+      }
     }
 
     async cleanup() {
@@ -2163,6 +2244,10 @@
         next.initQueries = normalized;
         duckDBInitQueriesSignature = JSON.stringify(normalized);
       }
+    }
+
+    if (updates.resetQueries !== undefined) {
+      next.resetQueries = normalizeInitQueries(updates.resetQueries);
     }
 
     Object.assign(config, next);

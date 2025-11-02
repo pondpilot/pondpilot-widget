@@ -11,13 +11,15 @@ describe("PondPilot bootstrap configuration", () => {
     vi.resetModules();
     window.PONDPILOT_CONFIG = {
       autoInit: false,
-      initQueries: ["INSTALL spatial;"]
+      initQueries: ["INSTALL spatial;"],
+      resetQueries: ["DROP TABLE demo;"]
     };
     const mod = await import("../src/pondpilot-widget.js");
     const PondPilot = mod.default || mod;
     const config = PondPilot.getConfig();
     expect(config.autoInit).toBe(false);
     expect(config.initQueries).toEqual(["INSTALL spatial;"]);
+    expect(config.resetQueries).toEqual(["DROP TABLE demo;"]);
     delete window.PONDPILOT_CONFIG;
   });
 });
@@ -91,5 +93,10 @@ describe("PondPilot configuration API", () => {
       "https://data.example.com",
     );
     expect(map.get("datasets/data.parquet")).toBe("https://data.example.com/datasets/data.parquet");
+  });
+
+  it("normalizes reset queries when updating config", () => {
+    PondPilot.config({ resetQueries: [" DROP TABLE demo ; "] });
+    expect(PondPilot.getConfig().resetQueries).toEqual(["DROP TABLE demo;"]);
   });
 });

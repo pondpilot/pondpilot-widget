@@ -12,7 +12,7 @@ describe("PondPilot widget lifecycle", () => {
   beforeEach(async () => {
     document.body.innerHTML = "";
     PondPilot = await loadPondPilot();
-    PondPilot.config({ autoInit: false, customThemes: {} });
+    PondPilot.config({ autoInit: false, customThemes: {}, resetQueries: [] });
   });
 
   it("creates a widget from a <pre> element", () => {
@@ -230,6 +230,24 @@ describe("PondPilot widget lifecycle", () => {
     editorPre.dispatchEvent(event);
 
     expect(runSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("executes reset queries when configured", async () => {
+    const pre = document.createElement("pre");
+    pre.className = "pondpilot-snippet";
+    pre.textContent = "SELECT 1;";
+    document.body.appendChild(pre);
+
+    const widget = PondPilot.create(pre, { resetQueries: ["DROP TABLE demo;"] });
+    const querySpy = vi.fn().mockResolvedValue(undefined);
+    const closeSpy = vi.fn().mockResolvedValue(undefined);
+    widget.conn = { query: querySpy, close: closeSpy };
+
+    await widget.reset();
+
+    expect(querySpy).toHaveBeenCalledTimes(1);
+    expect(querySpy).toHaveBeenCalledWith("DROP TABLE demo;");
+    expect(widget.currentCode).toBe(widget.originalCode);
   });
 
   it("resolves relative file paths via internals helper", () => {
