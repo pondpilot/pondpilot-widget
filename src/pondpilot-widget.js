@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.3.1";
+  const VERSION = "1.4.0";
   const GLOBAL_NAMESPACE = "PondPilot";
   const STYLE_ELEMENT_ID = "pondpilot-widget-styles";
   const FONT_LINK_ATTRIBUTE = "data-pondpilot-font";

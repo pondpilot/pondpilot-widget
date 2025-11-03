@@ -36,7 +36,7 @@ The easiest way to get started is via CDN:
 <script src="https://unpkg.com/pondpilot-widget"></script>
 
 <!-- Specific version (recommended for production) -->
-<script src="https://unpkg.com/pondpilot-widget@1.1.0"></script>
+<script src="https://unpkg.com/pondpilot-widget@1.4.0"></script>
 
 <!-- Alternative CDN -->
 <script src="https://cdn.jsdelivr.net/npm/pondpilot-widget"></script>
@@ -355,7 +355,7 @@ widget.destroy();        // Destroy widget
 2. **Subresource Integrity (SRI)**
    ```html
    <script
-     src="https://unpkg.com/pondpilot-widget@1.1.0"
+    src="https://unpkg.com/pondpilot-widget@1.4.0"
      integrity="sha384-[hash]"
      crossorigin="anonymous">
    </script>

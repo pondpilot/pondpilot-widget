@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.0] - 2025-11-03
+
+### Added
+- **Theme authoring** – register fully custom themes (incl. font families/sizes) and supply theme configs via `window.PONDPILOT_CONFIG`
+- **Init & reset queries** – run setup SQL once per page and optional cleanup SQL whenever the editor resets
+- **`pondpilot:results` event** – widgets emit structured row data so maps/visualizations can react without scraping tables
+- **Keyboard shortcut (Ctrl/Cmd+Enter)** – execute the current query directly from the editor
+- **Tooling** – Prettier configuration, simplified `justfile`, Vitest suite, and React/Vue integration examples
+
+### Changed
+- **Editor UX** – improved focus styling, better dark-theme contrast, and progress feedback during init/reset queries
+- **Docs & demos** – refreshed API/README/dev docs, new theme gallery, init/reset query guidance, and updated A5 demo that listens for `pondpilot:results`
+
 ## [1.3.1] - 2025-10-25
 
 ### Added
