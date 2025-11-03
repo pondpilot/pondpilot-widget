@@ -1,0 +1,9 @@
+/dist
+/node_modules
+analytics.parquet
+
+# Build outputs
+*.min.js
+
+# Fixtures & binaries
+examples/data

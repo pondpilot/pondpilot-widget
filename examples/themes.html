@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PondPilot Widget – Theme Gallery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 40px 20px 60px;
+        line-height: 1.6;
+        color: #1f2937;
+      }
+
+      h1 {
+        margin-bottom: 0.25rem;
+      }
+
+      .lead {
+        margin-top: 0;
+        margin-bottom: 2rem;
+        color: #4b5563;
+      }
+
+      section {
+        margin: 32px 0 48px;
+        padding-bottom: 32px;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      }
+
+      section:last-of-type {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      h2 {
+        margin-bottom: 0.5rem;
+      }
+
+      p {
+        margin-top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Theming the PondPilot Widget</h1>
+    <p class="lead">
+      Register custom themes once and reuse them across snippets. Theme tokens map to CSS custom properties,
+      so colours, typography, and syntax highlighting can be tailored to your brand.
+    </p>
+
+    <section>
+      <h2>Classic Light (built-in)</h2>
+      <p>The default theme is intentionally understated. No extra configuration is required.</p>
+      <pre class="pondpilot-snippet">
+SELECT
+  'Classic Light' AS theme,
+  'Built-in default look' AS description;</pre
+      >
+    </section>
+
+    <section>
+      <h2>Midnight Neon</h2>
+      <p>
+        Extends the dark palette with high-contrast neon accents – perfect for docs that lean into a terminal aesthetic.
+      </p>
+      <pre class="pondpilot-snippet" data-theme="midnight-neon">
+SELECT
+  'Midnight Neon' AS theme,
+  'Glow-in-the-dark vibes' AS description;</pre
+      >
+    </section>
+
+    <section>
+      <h2>Sunset Sorbet</h2>
+      <p>
+        Extends the light theme with warm gradients and rounded corners. Great for marketing landing pages or lighter documentation.
+      </p>
+      <pre class="pondpilot-snippet" data-theme="sunset-sorbet">
+SELECT
+  'Sunset Sorbet' AS theme,
+  'Soft gradients & friendly contrast' AS description;</pre
+      >
+    </section>
+
+    <section>
+      <h2>Forest Mist</h2>
+      <p>A calm woodland-inspired palette with soft greens and spacious typography.</p>
+      <pre class="pondpilot-snippet" data-theme="forest-mist">
+SELECT
+  'Forest Mist' AS theme,
+  'Soft greens and fresh air' AS description;</pre
+      >
+    </section>
+
+    <section>
+      <h2>Retro Terminal</h2>
+      <p>A neon-infused dark theme that swaps in IBM Plex Mono for a retro terminal flair.</p>
+      <pre class="pondpilot-snippet" data-theme="retro-terminal">
+SELECT
+  'Retro Terminal' AS theme,
+  'Neon grids and synth beats' AS description;</pre
+      >
+    </section>
+
+    <script src="../src/pondpilot-widget.js"></script>
+    <script>
+      window.PondPilot.registerTheme('midnight-neon', {
+        extends: 'dark',
+        config: {
+          bgColor: '#0c1022',
+          textColor: '#e7ecff',
+          borderColor: 'rgba(56, 189, 248, 0.18)',
+          editorBg: '#050814',
+          editorText: '#eaf6ff',
+          editorFocusBg: '#09102a',
+          controlsBg: 'rgba(56, 189, 248, 0.14)',
+          primaryBg: '#22d3ee',
+          primaryHover: '#0ea5e9',
+          secondaryBg: 'rgba(34, 211, 238, 0.18)',
+          secondaryText: '#c4f1ff',
+          syntaxKeyword: '#38bdf8',
+          syntaxString: '#fb7185',
+          syntaxNumber: '#a855f7',
+          syntaxComment: '#94a3b8',
+          syntaxSpecial: '#f97316',
+          syntaxIdentifier: '#facc15',
+          tableHeaderBg: 'rgba(34, 211, 238, 0.16)',
+          tableHeaderText: '#d5f5ff',
+          outputBg: '#111321',
+        },
+      });
+
+      window.PondPilot.registerTheme('sunset-sorbet', {
+        extends: 'light',
+        config: {
+          bgColor: '#fff7ed',
+          borderColor: 'rgba(249, 115, 22, 0.12)',
+          editorBg: '#fff0e6',
+          editorText: '#7c2d12',
+          editorFocusBg: '#ffe8d7',
+          controlsBg: 'rgba(249, 115, 22, 0.14)',
+          primaryBg: '#f97316',
+          primaryHover: '#ea580c',
+          secondaryBg: 'rgba(249, 115, 22, 0.2)',
+          secondaryText: '#7c2d12',
+          syntaxKeyword: '#c2410c',
+          syntaxString: '#0f766e',
+          syntaxNumber: '#2563eb',
+          syntaxComment: '#9a3412',
+          syntaxSpecial: '#dc2626',
+          syntaxIdentifier: '#d97706',
+          tableHeaderBg: 'rgba(249, 115, 22, 0.16)',
+          tableHeaderText: '#7c2d12',
+        },
+      });
+
+      window.PondPilot.registerTheme('forest-mist', {
+        extends: 'light',
+        config: {
+          bgColor: '#f5fbf6',
+          borderColor: 'rgba(34, 197, 94, 0.16)',
+          editorBg: '#ecf7ee',
+          editorText: '#1b4332',
+          editorFocusBg: '#dcf1e2',
+          controlsBg: 'rgba(34, 197, 94, 0.14)',
+          primaryBg: '#10b981',
+          primaryHover: '#059669',
+          secondaryBg: 'rgba(34, 197, 94, 0.18)',
+          secondaryText: '#14532d',
+          syntaxKeyword: '#0f766e',
+          syntaxString: '#ca8a04',
+          syntaxNumber: '#2563eb',
+          syntaxComment: '#64748b',
+          syntaxIdentifier: '#b45309',
+          tableHeaderBg: 'rgba(34, 197, 94, 0.12)',
+          tableHeaderText: '#14532d',
+        },
+      });
+
+      window.PondPilot.registerTheme('retro-terminal', {
+        extends: 'dark',
+        config: {
+          bgColor: '#121212',
+          borderColor: 'rgba(0, 255, 133, 0.14)',
+          editorBg: '#050505',
+          editorText: '#eafff2',
+          editorFocusBg: '#111b14',
+          controlsBg: 'rgba(0, 255, 133, 0.14)',
+          primaryBg: '#00ff85',
+          primaryHover: '#0ddf7d',
+          secondaryBg: 'rgba(0, 255, 133, 0.12)',
+          secondaryText: '#9ef2c3',
+          syntaxKeyword: '#00ff85',
+          syntaxString: '#ff9f1c',
+          syntaxNumber: '#2ec4b6',
+          syntaxComment: '#94e2b8',
+          syntaxIdentifier: '#fdffb6',
+          tableHeaderBg: 'rgba(0, 255, 133, 0.12)',
+          tableHeaderText: '#d1fbee',
+          fontFamily: "'IBM Plex Mono', 'SFMono-Regular', monospace",
+          editorFontFamily: "'IBM Plex Mono', 'SFMono-Regular', monospace",
+        },
+      });
+
+      document.addEventListener('DOMContentLoaded', () => {
+        window.PondPilot.init();
+      });
+    </script>
+  </body>
+</html>

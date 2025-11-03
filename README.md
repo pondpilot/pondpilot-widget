@@ -16,6 +16,10 @@ Transform static SQL code blocks into interactive snippets powered by DuckDB WAS
 - 🎨 **Syntax Highlighting** - Beautiful SQL code formatting with cursor preservation
 - ⚡ **Instant Results** - Execute queries with one click or Ctrl/Cmd+Enter
 - 🔧 **Easy Integration** - Works with any static site or documentation
+- 🧩 **Configurable** - Tweak selectors, auto-init, editable mode, and UI affordances
+- 🗂️ **Init Queries** - Install DuckDB extensions or run setup SQL once per page
+- ♻️ **Reset Queries** - Optionally run cleanup SQL when the editor resets
+- 🎨 **Custom Themes** - Extend light/dark defaults or register fully custom palettes
 - ♿ **Accessible** - Full ARIA support and keyboard navigation
 - 🎯 **Lightweight** - Only ~22KB minified, loads DuckDB on-demand
 - 🌙 **Dark Mode** - Automatic theme detection or manual control
@@ -32,7 +36,7 @@ The easiest way to get started is via CDN:
 <script src="https://unpkg.com/pondpilot-widget"></script>
 
 <!-- Specific version (recommended for production) -->
-<script src="https://unpkg.com/pondpilot-widget@1.1.0"></script>
+<script src="https://unpkg.com/pondpilot-widget@1.4.0"></script>
 
 <!-- Alternative CDN -->
 <script src="https://cdn.jsdelivr.net/npm/pondpilot-widget"></script>
@@ -79,8 +83,7 @@ The widget automatically transforms your static code blocks into interactive SQL
 If you're using a bundler like Webpack, Vite, or Parcel:
 
 ```javascript
-// Import in your main JS file
-import 'pondpilot-widget';
+import "pondpilot-widget";
 ```
 
 ## Usage Examples
@@ -104,8 +107,8 @@ new PondPilot.Widget(element, {
 
 #### React
 ```jsx
-import { useEffect, useRef } from 'react';
-import 'pondpilot-widget';
+import { useEffect, useRef } from "react";
+import "pondpilot-widget";
 
 function SQLEditor({ sql, ...options }) {
   const ref = useRef(null);
@@ -117,9 +120,107 @@ function SQLEditor({ sql, ...options }) {
     }
   }, []);
 
-  return <pre ref={ref} className="pondpilot-snippet">{sql}</pre>;
+  return (
+    <pre ref={ref} className="pondpilot-snippet">
+      {sql}
+    </pre>
+  );
 }
 ```
+
+## Advanced Configuration
+
+The runtime exposes a global API with ergonomic helpers:
+
+```javascript
+const { config, init, create, destroy, registerTheme, getConfig } = window.PondPilot;
+
+// Merge default configuration
+config({
+  selector: "pre.sql-demo",
+  baseUrl: "https://cdn.example.com/datasets",
+  autoInit: false,
+  initQueries: ["INSTALL httpfs", "LOAD httpfs"],
+  resetQueries: ["DROP TABLE IF EXISTS scratch_table;"],
+});
+
+// Register a custom theme and apply it via data-theme or options.theme
+registerTheme("sunset", {
+  extends: "light",
+  config: {
+    bgColor: "#ffedd5",
+    textColor: "#7c2d12",
+    borderColor: "#f97316",
+    editorBg: "#fff7ed",
+    editorText: "#7c2d12",
+    editorFocusBg: "#fed7aa",
+    controlsBg: "rgba(249, 115, 22, 0.12)",
+    primaryBg: "#f97316",
+    primaryText: "#ffffff",
+    primaryHover: "#ea580c",
+    secondaryBg: "rgba(249, 115, 22, 0.16)",
+    secondaryText: "#7c2d12",
+    secondaryHover: "rgba(249, 115, 22, 0.28)",
+    mutedText: "#9a3412",
+    errorText: "#dc2626",
+    errorBg: "rgba(220, 38, 38, 0.08)",
+    errorBorder: "rgba(220, 38, 38, 0.2)",
+    tableHeaderBg: "rgba(249, 115, 22, 0.16)",
+    tableHeaderText: "#7c2d12",
+    tableHover: "rgba(249, 115, 22, 0.12)",
+    syntaxKeyword: "#c2410c",
+    syntaxString: "#047857",
+    syntaxNumber: "#7c3aed",
+    syntaxComment: "#9a3412",
+    syntaxSpecial: "#dc2626",
+    syntaxIdentifier: "#facc15",
+    fontFamily: "Inter, system-ui, sans-serif",
+    editorFontFamily: "'JetBrains Mono', monospace",
+    fontSize: "14px",
+    editorFontSize: "13px",
+    buttonFontSize: "13px",
+    metadataFontSize: "12px",
+  },
+});
+
+// Manually mount widgets when needed
+document.querySelectorAll("pre.sql-demo").forEach((node) => {
+  window.PondPilot.create(node, { theme: "sunset" });
+});
+```
+
+### Data attributes
+
+Per-snippet overrides can be expressed declaratively:
+
+```html
+<pre
+  class="pondpilot-snippet"
+  data-theme="sunset"
+  data-base-url="https://cdn.example.com/data"
+  data-init-queries='["LOAD httpfs"]'
+>
+  <code>SELECT * FROM 'sales.parquet';</code>
+</pre>
+```
+
+Supported attributes include:
+
+- `data-theme`
+- `data-base-url`
+- `data-editable`
+- `data-show-powered-by`
+- `data-init-queries` (semicolon or JSON array)
+
+## API Summary
+
+- `PondPilot.init(target?, options?)` – initialize matching elements (defaults to `config.selector`)
+- `PondPilot.create(element, options?)` – mount a single instance on demand
+- `PondPilot.destroy(target?)` – remove widgets (defaults to all)
+- `PondPilot.config(partial)` – merge configuration
+- `PondPilot.getConfig()` – inspect current configuration
+- `PondPilot.registerTheme(name, definition)` – extend theming system
+- `PondPilot.Widget` – constructor for manual control (`new PondPilot.Widget(element, options)`)
 
 #### Vue
 ```vue
@@ -254,7 +355,7 @@ widget.destroy();        // Destroy widget
 2. **Subresource Integrity (SRI)**
    ```html
    <script
-     src="https://unpkg.com/pondpilot-widget@1.1.0"
+    src="https://unpkg.com/pondpilot-widget@1.4.0"
      integrity="sha384-[hash]"
      crossorigin="anonymous">
    </script>
@@ -313,6 +414,16 @@ MIT © PondPilot
 ## Contributing
 
 Contributions welcome! Please read our [contributing guide](https://github.com/pondpilot/pondpilot-widget/blob/main/CONTRIBUTING.md).
+
+### Local development
+
+```bash
+npm install       # install dependencies
+npm run format    # apply Prettier formatting
+npm test          # run the Vitest suite
+```
+
+Prefer `just`? We provide a lightweight `justfile` with the same commands (`just format`, `just test`, etc.).
 
 ## Support
 

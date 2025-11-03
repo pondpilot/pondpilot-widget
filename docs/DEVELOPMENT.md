@@ -4,22 +4,23 @@
 
 ```
 pondpilot-widget/
-├── src/                    # Source code
+├── src/                    # Widget source (single-file build)
 │   └── pondpilot-widget.js # Main widget source
 ├── dist/                   # Build output (gitignored)
-│   ├── pondpilot-widget.js # Unminified build
-│   └── pondpilot-widget.min.js # Minified build
+│   ├── pondpilot-widget.js      # Unminified build
+│   └── pondpilot-widget.min.js  # Minified build
 ├── examples/               # Example HTML files
-│   ├── index.html         # Full examples
-│   ├── basic.html         # Basic usage
-│   └── customization.html # Customization examples
+│   ├── index.html
+│   ├── basic.html
+│   └── customization.html
+├── tests/                  # Vitest unit tests + helpers
 ├── docs/                   # Documentation
-│   ├── API.md             # API reference
-│   └── DEVELOPMENT.md     # This file
-├── build.js               # Build script
-├── package.json           # NPM package config
-├── README.md              # Main documentation
-└── LICENSE               # MIT license
+│   ├── API.md
+│   └── DEVELOPMENT.md
+├── build.js                # Build script (Terser)
+├── package.json
+├── README.md
+└── LICENSE
 ```
 
 ## Development Setup
@@ -35,14 +36,21 @@ pondpilot-widget/
    npm install
    ```
 
-3. **Start development server**
+3. **Format code (Prettier)**
+   ```bash
+   npm run format
+   # or to check without writing:
+   npm run format:check
+   ```
+
+4. **Start development server**
    ```bash
    npm run dev
    # or
    python3 -m http.server 8000
    ```
 
-4. **Open examples**
+5. **Open examples**
    - http://localhost:8000/examples/basic.html
    - http://localhost:8000/examples/customization.html
 
@@ -63,22 +71,27 @@ This creates:
 ### Main Components
 
 1. **Widget Class** (`PondPilotWidget`)
-   - Handles widget initialization
-   - Manages editor state
-   - Controls DuckDB execution
-   - Renders results
+   - Handles mounting/teardown and DOM lifecycles
+   - Applies themes (built-in + custom)
+   - Manages editor state and highlighting
+   - Controls DuckDB execution and result rendering
 
 2. **DuckDB Integration**
    - Dynamic loading of DuckDB WASM
+   - Optional external instance injection
    - Connection management
-   - Query execution
-   - Result formatting
+   - Init queries executed once per page
 
-3. **UI Components**
-   - Minimal floating run button
-   - Clean SQL editor
-   - Results table with footer
-   - Subtle duck watermark
+3. **Path Resolution**
+   - Normalises relative/absolute URLs
+   - Supports parquet/csv/json/arrow
+   - Integrates with DuckDB `registerFileURL`
+
+4. **UI Components**
+   - Button tray (Run / Reset)
+   - Editable SQL editor with highlighting
+   - Results table + metadata
+   - “Powered by” footer and duck watermark
 
 ### Key Methods
 
@@ -87,16 +100,31 @@ This creates:
 - `run()` - Execute SQL query
 - `reset()` - Reset to original SQL
 - `displayResults()` - Render query results
+- `processSQLFileReferences()` - Resolve/register external files
 
 ## Testing
 
-1. **Manual Testing**
-   - Test all examples in different browsers
-   - Verify dark/light themes
-   - Check read-only mode
-   - Test error handling
+### Custom Events (for integration tests)
 
-2. **Browser Compatibility**
+- `pondpilot:results` — emitted after a widget writes results; payload contains `{ data, elapsed, widget }`.
+
+
+1. **Unit Tests (Vitest)**
+   ```bash
+   npm test              # run once
+   npm run test:watch    # watch mode
+   npm run test:coverage # coverage report
+   ```
+
+2. **Manual Testing**
+   - Test examples across browsers
+   - Toggle light/dark/custom themes
+   - Verify read-only widgets
+- Test error messaging and init queries
+- Verify Ctrl/Cmd+Enter runs the current query
+- Verify reset queries clean up temporary tables
+
+3. **Browser Compatibility**
    - Chrome/Edge (requires CORS headers for SharedArrayBuffer)
    - Firefox
    - Safari (best compatibility)
@@ -127,34 +155,26 @@ This creates:
 
 ### Adding New Options
 
-1. Add to default config:
-   ```javascript
-   const config = {
-     // ... existing options
-     newOption: 'default-value'
-   };
-   ```
-
-2. Use in widget:
-   ```javascript
-   if (this.options.newOption === 'something') {
-     // Handle option
-   }
-   ```
+1. Extend `DEFAULT_CONFIG` in `src/pondpilot-widget.js`.
+2. Thread the option through constructor merge logic.
+3. Apply behaviour inside `PondPilotWidget` or helper modules.
+4. Update docs/tests accordingly.
 
 ### Styling Changes
 
-All styles are in the `styles` constant. Follow the existing patterns:
-- Use CSS variables for consistency
-- Support both light and dark themes
-- Keep styles minimal and unobtrusive
+All styles live in the `styles` template literal. We rely on CSS custom properties, so prefer updating tokens over hard-coded colours. Ensure both light/dark defaults remain legible.
+
+### Themes
+
+- Built-in themes are stored in `BUILTIN_THEMES`.
+- Validation keys are defined in `REQUIRED_THEME_KEYS`.
+- Use `registerTheme` in docs/examples when adding showcase palettes.
 
 ### DuckDB Version
 
 The DuckDB version is configured in the widget:
 ```javascript
-// In config object
-duckdbVersion: "1.30.0"
+duckdbVersion: "1.31.1-dev1.0"
 
 // To update, change the version in config and rebuild
 ```
@@ -181,4 +201,5 @@ DuckDB WASM requires SharedArrayBuffer, which needs specific headers in Chrome/E
 ### Widget Not Initializing
 - Check browser console for errors
 - Verify DuckDB CDN is accessible
-- Ensure proper HTML structure
+- Ensure proper HTML structure and selector configuration
+- Confirm `autoInit` is enabled or call `PondPilot.init()` manually
